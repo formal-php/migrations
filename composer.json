@@ -15,7 +15,9 @@
         "issues": "http://github.com/formal-php/migrations/issues"
     },
     "require": {
-        "php": "~8.2"
+        "php": "~8.2",
+        "innmind/operating-system": "~5.2",
+        "formal/orm": "~3.3"
     },
     "autoload": {
         "psr-4": {
