@@ -68,7 +68,7 @@ final class Run
      */
     public static function of(
         Processes $processes,
-        callable $configure = null,
+        callable $configure,
     ): self {
         return new self($processes, $configure);
     }
