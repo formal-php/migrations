@@ -32,7 +32,6 @@ final class SQL
      */
     public function __invoke(Sequence $migrations): Sequence
     {
-        $queries = Sequence::of();
         $versions = $this->storage->repository(Version::class);
         $sql = $this->os->remote()->sql($this->dsn);
 
