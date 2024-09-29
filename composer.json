@@ -1,0 +1,30 @@
+{
+    "name": "formal/migrations",
+    "type": "library",
+    "description": "",
+    "keywords": [],
+    "homepage": "http://github.com/formal/migrations",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Baptiste Langlade",
+            "email": "baptiste.langlade@hey.com"
+        }
+    ],
+    "support": {
+        "issues": "http://github.com/formal/migrations/issues"
+    },
+    "require": {
+        "php": "~8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "formal\\migrations\\": "src/"
+        }
+    },
+    "require-dev": {
+        "vimeo/psalm": "~5.13",
+        "innmind/black-box": "^5.6.1",
+        "innmind/coding-standard": "~2.0"
+    }
+}
