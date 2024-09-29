@@ -24,6 +24,11 @@
             "Formal\\Migrations\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Fixtures\\Formal\\Migrations\\": "fixtures/"
+        }
+    },
     "require-dev": {
         "vimeo/psalm": "~5.13",
         "innmind/black-box": "~5.7",
