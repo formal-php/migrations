@@ -15,7 +15,10 @@ use Innmind\Server\Control\Server\{
 };
 use Innmind\Immutable\Sequence;
 
-final class Commands
+/**
+ * @implements Runner<Run>
+ */
+final class Commands implements Runner
 {
     private Manager $storage;
     private OperatingSystem $os;
@@ -40,9 +43,6 @@ final class Commands
         $this->configure = $configure;
     }
 
-    /**
-     * @param Sequence<Migration<Run>> $migrations
-     */
     public function __invoke(Sequence $migrations): Applied
     {
         $processes = ($this->build)($this->os);
