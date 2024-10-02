@@ -13,10 +13,6 @@ use Innmind\Server\Control\Server\{
     Processes,
     Command,
 };
-use Innmind\Specification\{
-    Comparator\Property,
-    Sign,
-};
 use Innmind\Immutable\Sequence;
 
 final class Commands
@@ -49,25 +45,15 @@ final class Commands
      */
     public function __invoke(Sequence $migrations): Applied
     {
-        $versions = $this->storage->repository(Version::class);
         $processes = ($this->build)($this->os);
         $run = Run::of($processes, $this->configure);
 
-        return $migrations
-            ->exclude(static fn($migration) => $versions->any(
-                Property::of(
-                    'name',
-                    Sign::equality,
-                    $migration->name(),
-                ),
-            ))
-            ->reduce(
-                Applied::new($this->os->clock(), $this->storage),
-                static fn(Applied $applied, $migration) => $applied->then(
-                    $run,
-                    $migration,
-                ),
-            );
+        return Applied::of(
+            $this->os->clock(),
+            $this->storage,
+            $migrations,
+            $run,
+        );
     }
 
     /**

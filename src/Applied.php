@@ -5,6 +5,10 @@ namespace Formal\Migrations;
 
 use Formal\ORM\Manager;
 use Innmind\TimeContinuum\Clock;
+use Innmind\Specification\{
+    Comparator\Property,
+    Sign,
+};
 use Innmind\Immutable\{
     Sequence,
     Either,
@@ -23,14 +27,35 @@ final readonly class Applied
     ) {
     }
 
-    public static function new(Clock $clock, Manager $storage): self
-    {
-        return new self(
-            $clock,
-            $storage,
-            Sequence::of(),
-            true,
-        );
+    /**
+     * @template T
+     *
+     * @param Sequence<Migration<T>> $migrations
+     * @param T $kind
+     */
+    public static function of(
+        Clock $clock,
+        Manager $storage,
+        Sequence $migrations,
+        mixed $kind,
+    ): self {
+        $versions = $storage->repository(Version::class);
+
+        return $migrations
+            ->exclude(static fn($migration) => $versions->any(
+                Property::of(
+                    'name',
+                    Sign::equality,
+                    $migration->name(),
+                ),
+            ))
+            ->reduce(
+                self::new($clock, $storage),
+                static fn(self $applied, $migration) => $applied->then(
+                    $kind,
+                    $migration,
+                ),
+            );
     }
 
     /**
@@ -49,13 +74,23 @@ final readonly class Applied
         };
     }
 
+    private static function new(Clock $clock, Manager $storage): self
+    {
+        return new self(
+            $clock,
+            $storage,
+            Sequence::of(),
+            true,
+        );
+    }
+
     /**
      * @template T
      *
      * @param T $kind
      * @param Migration<T> $migration
      */
-    public function then(
+    private function then(
         $kind,
         Migration $migration,
     ): self {

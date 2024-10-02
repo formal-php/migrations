@@ -7,10 +7,6 @@ use Formal\ORM\Manager;
 use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
-use Innmind\Specification\{
-    Comparator\Property,
-    Sign,
-};
 use Innmind\Immutable\Sequence;
 
 final class SQL
@@ -27,24 +23,14 @@ final class SQL
      */
     public function __invoke(Sequence $migrations): Applied
     {
-        $versions = $this->storage->repository(Version::class);
         $sql = $this->os->remote()->sql($this->dsn);
 
-        return $migrations
-            ->exclude(static fn($migration) => $versions->any(
-                Property::of(
-                    'name',
-                    Sign::equality,
-                    $migration->name(),
-                ),
-            ))
-            ->reduce(
-                Applied::new($this->os->clock(), $this->storage),
-                static fn(Applied $applied, $migration) => $applied->then(
-                    $sql,
-                    $migration,
-                ),
-            );
+        return Applied::of(
+            $this->os->clock(),
+            $this->storage,
+            $migrations,
+            $sql,
+        );
     }
 
     public static function of(
