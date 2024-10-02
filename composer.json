@@ -17,7 +17,7 @@
     "require": {
         "php": "~8.2",
         "innmind/operating-system": "~5.2",
-        "formal/orm": "~3.3"
+        "formal/orm": "~3.4"
     },
     "autoload": {
         "psr-4": {
