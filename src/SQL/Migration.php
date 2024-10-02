@@ -11,6 +11,8 @@ use Formal\AccessLayer\{
 use Innmind\Filesystem\File;
 use Innmind\Immutable\{
     Sequence,
+    Maybe,
+    SideEffect,
     Predicate\Instance,
 };
 
@@ -29,9 +31,14 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    public function __invoke($kind): void
+    public function __invoke($kind): Maybe
     {
-        $_ = $this->queries->foreach($kind);
+        try {
+            return Maybe::just($this->queries->foreach($kind));
+        } catch (\Throwable $e) {
+            /** @var Maybe<SideEffect> */
+            return Maybe::nothing();
+        }
     }
 
     /**

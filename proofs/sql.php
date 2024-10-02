@@ -70,7 +70,7 @@ return static function() {
                 $dsn,
             );
 
-            $versions = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(Sequence::of(
                 Migration::of(
                     $a,
                     Query\SQL::of('create table `test` (`value` int not null)'),
@@ -93,8 +93,12 @@ return static function() {
                     Query\SQL::of('delete from `test` where `value` > 2'),
                     Query\SQL::of('commit'),
                 ),
-            ));
+            ))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
 
+            $assert->true($successfully);
             $assert->count(4, $versions);
             $assert->same(
                 [$a, $b, $c, $d],
@@ -186,7 +190,7 @@ return static function() {
                 },
             );
 
-            $versions = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(Sequence::of(
                 Migration::of(
                     $a,
                     Query\SQL::of('create table `test` (`value` int not null)'),
@@ -209,8 +213,12 @@ return static function() {
                     Query\SQL::of('delete from `test` where `value` > 2'),
                     Query\SQL::of('commit'),
                 ),
-            ));
+            ))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
 
+            $assert->true($successfully);
             $assert->count(3, $versions);
             $assert->same(
                 [$a, $b, $c],
@@ -323,8 +331,12 @@ return static function() {
                 $dsn,
             );
 
-            $versions = $migrations(Load::files($filesystem));
+            [$successfully, $versions] = $migrations(Load::files($filesystem))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
 
+            $assert->true($successfully);
             $assert->count(4, $versions);
             $assert->same(
                 [$a, $b, $c, $d],
@@ -359,6 +371,99 @@ return static function() {
 
             $assert->same(
                 [['value' => 1]],
+                $os
+                    ->remote()
+                    ->sql($dsn)(
+                        Query\SQL::of('select * from `test`'),
+                    )
+                    ->map(static fn($row) => $row->toArray())
+                    ->toList(),
+            );
+        },
+    );
+
+    yield proof(
+        'SQL failing migrations',
+        given(
+            Set\MutuallyExclusive::of(
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+            ),
+        ),
+        static function($assert, $names) use ($os, $dsn) {
+            [$a, $b, $c] = $names;
+
+            // setup
+            $os
+                ->remote()
+                ->sql($dsn)(
+                    Query\SQL::of('drop table if exists `test`'),
+                );
+
+            $migrations = SQL::of(
+                $storage = Manager::filesystem(
+                    InMemory::emulateFilesystem(),
+                    Aggregates::of(
+                        Types::of(
+                            Support::class(
+                                PointInTime::class,
+                                PointInTimeType::new($os->clock()),
+                            ),
+                        ),
+                    ),
+                ),
+                $os,
+                $dsn,
+            );
+
+            [$successfully, $versions] = $migrations(Sequence::of(
+                Migration::of(
+                    $a,
+                    Query\SQL::of('create table `test` (`value` int not null)'),
+                ),
+                Migration::of(
+                    $b,
+                    Query\SQL::of('create table `test` (`value` int not null)'),
+                ),
+                Migration::of(
+                    $c,
+                    Query\SQL::of('start transaction'),
+                    Query\SQL::of('insert into `test` values (3)'),
+                    Query\SQL::of('commit'),
+                ),
+            ))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
+
+            $assert->false($successfully);
+            $assert->count(1, $versions);
+            $assert->same(
+                [$a],
+                $versions
+                    ->map(static fn($version) => $version->name())
+                    ->toList(),
+            );
+            $stored = $storage
+                ->repository(Version::class)
+                ->all()
+                ->map(static fn($version) => $version->name())
+                ->toList();
+            $assert
+                ->expected($a)
+                ->in($stored);
+            $assert
+                ->expected($b)
+                ->not()
+                ->in($stored);
+            $assert
+                ->expected($c)
+                ->not()
+                ->in($stored);
+
+            $assert->same(
+                [],
                 $os
                     ->remote()
                     ->sql($dsn)(

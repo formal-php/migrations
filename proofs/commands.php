@@ -37,6 +37,7 @@ return static function() {
             [$a, $b, $c, $d] = $names;
             $tmp = \sys_get_temp_dir().'/formal/migrations';
             @\mkdir($tmp, recursive: true);
+            @\unlink($tmp.'/test');
 
             $os = Factory::build();
 
@@ -57,7 +58,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            $versions = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -76,8 +77,12 @@ return static function() {
                     $d,
                     Ref::rm,
                 ),
-            ));
+            ))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
 
+            $assert->true($successfully);
             $assert->count(4, $versions);
             $assert->same(
                 [$a, $b, $c, $d],
@@ -113,6 +118,93 @@ return static function() {
             $assert->true(\file_exists($tmp.'/test'));
             $assert->same(
                 "foo\n",
+                \file_get_contents($tmp.'/test'),
+            );
+        },
+    );
+
+    yield proof(
+        'Commands failing migrations',
+        given(
+            Set\MutuallyExclusive::of(
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+            ),
+        ),
+        static function($assert, $names) {
+            [$a, $b, $c] = $names;
+            $tmp = \sys_get_temp_dir().'/formal/migrations';
+            @\mkdir($tmp, recursive: true);
+            @\unlink($tmp.'/test');
+
+            $os = Factory::build();
+
+            $migrations = Commands::of(
+                $storage = Manager::filesystem(
+                    InMemory::emulateFilesystem(),
+                    Aggregates::of(
+                        Types::of(
+                            Support::class(
+                                PointInTime::class,
+                                PointInTimeType::new($os->clock()),
+                            ),
+                        ),
+                    ),
+                ),
+                $os,
+                null,
+                static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
+            );
+
+            [$successfully, $versions] = $migrations(Sequence::of(
+                Migration::of(
+                    $a,
+                    Command::foreground('touch test')
+                        ->withWorkingDirectory(Path::of($tmp)),
+                ),
+                Migration::of(
+                    $b,
+                    Command::foreground('exit 1'),
+                ),
+                Migration::of(
+                    $c,
+                    Command::foreground('echo foo >> test')
+                        ->withWorkingDirectory(Path::of($tmp)),
+                ),
+            ))->match(
+                static fn($versions) => [true, $versions],
+                static fn($versions) => [false, $versions],
+            );
+
+            $assert->false($successfully);
+            $assert->count(1, $versions);
+            $assert->same(
+                [$a],
+                $versions
+                    ->map(static fn($version) => $version->name())
+                    ->toList(),
+            );
+            $stored = $storage
+                ->repository(Version::class)
+                ->all()
+                ->map(static fn($version) => $version->name())
+                ->toList();
+            $assert
+                ->expected($a)
+                ->in($stored);
+            $assert
+                ->expected($b)
+                ->not()
+                ->in($stored);
+            $assert
+                ->expected($c)
+                ->not()
+                ->in($stored);
+
+            $assert->true(\file_exists($tmp.'/test'));
+            $assert->same(
+                '',
                 \file_get_contents($tmp.'/test'),
             );
         },

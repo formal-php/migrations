@@ -11,10 +11,7 @@ use Innmind\Specification\{
     Comparator\Property,
     Sign,
 };
-use Innmind\Immutable\{
-    Sequence,
-    Either,
-};
+use Innmind\Immutable\Sequence;
 
 final class SQL
 {
@@ -27,10 +24,8 @@ final class SQL
 
     /**
      * @param Sequence<Migration<Connection>> $migrations
-     *
-     * @return Sequence<Version>
      */
-    public function __invoke(Sequence $migrations): Sequence
+    public function __invoke(Sequence $migrations): Applied
     {
         $versions = $this->storage->repository(Version::class);
         $sql = $this->os->remote()->sql($this->dsn);
@@ -43,24 +38,13 @@ final class SQL
                     $migration->name(),
                 ),
             ))
-            ->map(function($migration) use ($sql, $versions) {
-                $migration($sql);
-
-                $version = Version::new(
-                    $migration->name(),
-                    $this->os->clock(),
-                );
-
-                $this->storage->transactional(
-                    static function() use ($version, $versions) {
-                        $versions->put($version);
-
-                        return Either::right(null);
-                    },
-                );
-
-                return $version;
-            });
+            ->reduce(
+                Applied::new($this->os->clock(), $this->storage),
+                static fn(Applied $applied, $migration) => $applied->then(
+                    $sql,
+                    $migration,
+                ),
+            );
     }
 
     public static function of(

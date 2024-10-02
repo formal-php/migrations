@@ -17,10 +17,7 @@ use Innmind\Specification\{
     Comparator\Property,
     Sign,
 };
-use Innmind\Immutable\{
-    Sequence,
-    Either,
-};
+use Innmind\Immutable\Sequence;
 
 final class Commands
 {
@@ -49,10 +46,8 @@ final class Commands
 
     /**
      * @param Sequence<Migration<Run>> $migrations
-     *
-     * @return Sequence<Version>
      */
-    public function __invoke(Sequence $migrations): Sequence
+    public function __invoke(Sequence $migrations): Applied
     {
         $versions = $this->storage->repository(Version::class);
         $processes = ($this->build)($this->os);
@@ -66,24 +61,13 @@ final class Commands
                     $migration->name(),
                 ),
             ))
-            ->map(function($migration) use ($run, $versions) {
-                $migration($run);
-
-                $version = Version::new(
-                    $migration->name(),
-                    $this->os->clock(),
-                );
-
-                $this->storage->transactional(
-                    static function() use ($version, $versions) {
-                        $versions->put($version);
-
-                        return Either::right(null);
-                    },
-                );
-
-                return $version;
-            });
+            ->reduce(
+                Applied::new($this->os->clock(), $this->storage),
+                static fn(Applied $applied, $migration) => $applied->then(
+                    $run,
+                    $migration,
+                ),
+            );
     }
 
     /**

@@ -5,7 +5,11 @@ namespace Formal\Migrations\Commands;
 
 use Formal\Migrations\Migration as MigrationInterface;
 use Innmind\Server\Control\Server\Command;
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\{
+    Sequence,
+    Maybe,
+    SideEffect,
+};
 
 /**
  * @implements MigrationInterface<Run>
@@ -22,12 +26,14 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    public function __invoke($kind): void
+    public function __invoke($kind): Maybe
     {
-        $_ = $this->commands->foreach(
-            static fn($command) => $kind($command)->match(
-                static fn() => null,
-                static fn($error) => throw new \RuntimeException($error::class),
+        return $this->commands->reduce(
+            Maybe::just(new SideEffect),
+            static fn(Maybe $state, $command) => $state->flatMap(
+                static fn() => $kind($command)
+                    ->maybe()
+                    ->map(static fn() => new SideEffect),
             ),
         );
     }
