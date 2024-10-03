@@ -13,6 +13,8 @@ interface Runner
 {
     /**
      * @param Sequence<Migration<T, E>> $migrations
+     *
+     * @return Applied<E>
      */
     public function __invoke(Sequence $migrations): Applied;
 }
