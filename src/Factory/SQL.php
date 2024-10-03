@@ -67,6 +67,9 @@ final readonly class SQL
         );
     }
 
+    /**
+     * @return Applied<\Throwable>
+     */
     public function migrate(Url $dsn): Applied
     {
         ($this->setup)();

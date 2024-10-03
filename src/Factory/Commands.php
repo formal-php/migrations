@@ -62,6 +62,8 @@ final readonly class Commands
     /**
      * @param ?callable(OperatingSystem): Processes $build
      * @param ?callable(Runner\Reference): (callable(Command): Command) $configure
+     *
+     * @return Applied<TimedOut|Failed|Signaled>
      */
     public function migrate(
         callable $build = null,
