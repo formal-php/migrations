@@ -417,7 +417,7 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(Sequence::of(
                 Migration::of(
                     $a,
                     Query\SQL::of('create table `test` (`value` int not null)'),
@@ -433,11 +433,18 @@ return static function() {
                     Query\SQL::of('commit'),
                 ),
             ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($versions) => [true, $versions, null],
+                static fn($error, $versions) => [false, $versions, $error],
             );
 
             $assert->false($successfully);
+            $assert
+                ->object($error)
+                ->instance(Throwable::class);
+            $assert->same(
+                "Query 'create table `test` (`value` int not null)' failed with: [42S01] [1050] Table 'test' already exists",
+                $error->getMessage(),
+            );
             $assert->count(1, $versions);
             $assert->same(
                 [$a],

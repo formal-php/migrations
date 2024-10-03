@@ -11,13 +11,12 @@ use Formal\AccessLayer\{
 use Innmind\Filesystem\File;
 use Innmind\Immutable\{
     Sequence,
-    Maybe,
-    SideEffect,
+    Either,
     Predicate\Instance,
 };
 
 /**
- * @implements MigrationInterface<Connection>
+ * @implements MigrationInterface<Connection, \Throwable>
  */
 final class Migration implements MigrationInterface
 {
@@ -31,13 +30,12 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    public function __invoke($kind): Maybe
+    public function __invoke($kind): Either
     {
         try {
-            return Maybe::just($this->queries->foreach($kind));
+            return Either::right($this->queries->foreach($kind));
         } catch (\Throwable $e) {
-            /** @var Maybe<SideEffect> */
-            return Maybe::nothing();
+            return Either::left($e);
         }
     }
 

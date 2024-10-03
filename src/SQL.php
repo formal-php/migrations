@@ -10,7 +10,7 @@ use Innmind\Url\Url;
 use Innmind\Immutable\Sequence;
 
 /**
- * @implements Runner<Connection>
+ * @implements Runner<Connection, \Throwable>
  */
 final class SQL implements Runner
 {

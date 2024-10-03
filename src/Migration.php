@@ -5,20 +5,21 @@ namespace Formal\Migrations;
 
 use Innmind\Immutable\{
     SideEffect,
-    Maybe,
+    Either,
 };
 
 /**
  * @template T
+ * @template E
  */
 interface Migration
 {
     /**
      * @param T $kind
      *
-     * @return Maybe<SideEffect>
+     * @return Either<E, SideEffect>
      */
-    public function __invoke($kind): Maybe;
+    public function __invoke($kind): Either;
 
     /**
      * @return non-empty-string

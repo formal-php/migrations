@@ -13,6 +13,9 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Server\Control\Server\{
     Processes,
     Command,
+    Process\TimedOut,
+    Process\Failed,
+    Process\Signaled,
 };
 use Innmind\Immutable\Sequence;
 
@@ -20,7 +23,7 @@ final readonly class Commands
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Runner\Run>> $migrations
+     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -44,7 +47,7 @@ final readonly class Commands
     }
 
     /**
-     * @param Sequence<Migration<Runner\Run>> $migrations
+     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
      */
     public function of(Sequence $migrations): self
     {

@@ -16,7 +16,10 @@ use Formal\ORM\{
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\Filesystem\Adapter\InMemory;
-use Innmind\Server\Control\Server\Command;
+use Innmind\Server\Control\Server\{
+    Command,
+    Process\Failed,
+};
 use Innmind\TimeContinuum\PointInTime;
 use Innmind\Url\Path;
 use Innmind\Immutable\Sequence;
@@ -131,8 +134,9 @@ return static function() {
                 Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
                 Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
             ),
+            Set\Integers::between(1, 255),
         ),
-        static function($assert, $names) {
+        static function($assert, $names, $exit) {
             [$a, $b, $c] = $names;
             $tmp = \sys_get_temp_dir().'/formal/migrations';
             @\mkdir($tmp, recursive: true);
@@ -157,7 +161,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -165,7 +169,7 @@ return static function() {
                 ),
                 Migration::of(
                     $b,
-                    Command::foreground('exit 1'),
+                    Command::foreground("exit $exit"),
                 ),
                 Migration::of(
                     $c,
@@ -173,11 +177,15 @@ return static function() {
                         ->withWorkingDirectory(Path::of($tmp)),
                 ),
             ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($versions) => [true, $versions, null],
+                static fn($error, $versions) => [false, $versions, $error],
             );
 
             $assert->false($successfully);
+            $assert
+                ->object($error)
+                ->instance(Failed::class);
+            $assert->same($exit, $error->exitCode()->toInt());
             $assert->count(1, $versions);
             $assert->same(
                 [$a],

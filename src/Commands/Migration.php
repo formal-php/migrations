@@ -4,15 +4,20 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Commands;
 
 use Formal\Migrations\Migration as MigrationInterface;
-use Innmind\Server\Control\Server\Command;
+use Innmind\Server\Control\Server\{
+    Command,
+    Process\TimedOut,
+    Process\Failed,
+    Process\Signaled,
+};
 use Innmind\Immutable\{
     Sequence,
-    Maybe,
+    Either,
     SideEffect,
 };
 
 /**
- * @implements MigrationInterface<Run>
+ * @implements MigrationInterface<Run, TimedOut|Failed|Signaled>
  */
 final class Migration implements MigrationInterface
 {
@@ -26,14 +31,15 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    public function __invoke($kind): Maybe
+    public function __invoke($kind): Either
     {
+        /** @var Either<TimedOut|Failed|Signaled, SideEffect> */
         return $this->commands->reduce(
-            Maybe::just(new SideEffect),
-            static fn(Maybe $state, $command) => $state->flatMap(
-                static fn() => $kind($command)
-                    ->maybe()
-                    ->map(static fn() => new SideEffect),
+            Either::right(new SideEffect),
+            static fn(Either $state, $command) => $state->flatMap(
+                static fn() => $kind($command)->map(
+                    static fn() => new SideEffect,
+                ),
             ),
         );
     }

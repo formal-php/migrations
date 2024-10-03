@@ -12,11 +12,14 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Server\Control\Server\{
     Processes,
     Command,
+    Process\TimedOut,
+    Process\Failed,
+    Process\Signaled,
 };
 use Innmind\Immutable\Sequence;
 
 /**
- * @implements Runner<Run>
+ * @implements Runner<Run, TimedOut|Failed|Signaled>
  */
 final class Commands implements Runner
 {

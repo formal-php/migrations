@@ -21,7 +21,7 @@ final readonly class SQL
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Connection>> $migrations
+     * @param Sequence<Migration<Connection, \Throwable>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -45,7 +45,7 @@ final readonly class SQL
     }
 
     /**
-     * @param Sequence<Migration<Connection>> $migrations
+     * @param Sequence<Migration<Connection, \Throwable>> $migrations
      */
     public function of(Sequence $migrations): self
     {

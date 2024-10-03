@@ -7,11 +7,12 @@ use Innmind\Immutable\Sequence;
 
 /**
  * @template T
+ * @template E
  */
 interface Runner
 {
     /**
-     * @param Sequence<Migration<T>> $migrations
+     * @param Sequence<Migration<T, E>> $migrations
      */
     public function __invoke(Sequence $migrations): Applied;
 }
