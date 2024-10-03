@@ -27,6 +27,12 @@ return static function() {
             @\mkdir($sql, recursive: true);
             $tmp = \sys_get_temp_dir().'/formal/migrations/tmp/';
             @\mkdir($tmp, recursive: true);
+            $fs = $os->filesystem()->mount(Path::of($tmp));
+            $fs
+                ->root()
+                ->all()
+                ->map(static fn($file) => $file->name())
+                ->foreach($fs->remove(...));
 
             $os
                 ->filesystem()
