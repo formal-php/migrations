@@ -62,7 +62,7 @@ return static function() {
                 ->migrate($dsn)
                 ->match(
                     static fn($versions) => [true, $versions],
-                    static fn($versions) => [false, $versions],
+                    static fn($_, $versions) => [false, $versions],
                 );
 
             $assert->true($successfully);
@@ -75,7 +75,7 @@ return static function() {
                 ->migrate($dsn)
                 ->match(
                     static fn($versions) => [true, $versions],
-                    static fn($versions) => [false, $versions],
+                    static fn($_, $versions) => [false, $versions],
                 );
 
             $assert->true($successfully);
