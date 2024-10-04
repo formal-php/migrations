@@ -238,3 +238,17 @@ In the example above there's only one `Query\SQL` query per migration but you ca
         ```
 
     As long as each feature doesn't depend on each other it doesn't matter that the whole `Sequence` is not sorted. And even if they depend on each other you can sort them in `migrate.php` by calling `Sequence->sort()`.
+
+## Transactions
+
+Formal doesn't apply transactions on migrations. Because databases like MySQL automatically will automatically commit a transaction when you modify a table schema.
+
+Instead of Formal trying to understand the state of the connection when your migrations are applied it lets you handle the transactions:
+
+<div class="annotate" markdown>
+- If your migration only change a schema then don't do anything (1).
+- Otherwise start your migration with `#!sql START TRANSACTION;` and end it with `#!sql COMMIT;` (2).
+</div>
+
+1. Granted your database doesn't support it. If it does you should use it.
+2. These are native SQL queries.
