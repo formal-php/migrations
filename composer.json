@@ -3,7 +3,7 @@
     "type": "library",
     "description": "",
     "keywords": [],
-    "homepage": "http://github.com/formal/migrations",
+    "homepage": "http://github.com/formal-php/migrations",
     "license": "MIT",
     "authors": [
         {
@@ -12,19 +12,26 @@
         }
     ],
     "support": {
-        "issues": "http://github.com/formal/migrations/issues"
+        "issues": "http://github.com/formal-php/migrations/issues"
     },
     "require": {
-        "php": "~8.2"
+        "php": "~8.2",
+        "innmind/operating-system": "~5.2",
+        "formal/orm": "~3.4"
     },
     "autoload": {
         "psr-4": {
-            "formal\\migrations\\": "src/"
+            "Formal\\Migrations\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Fixtures\\Formal\\Migrations\\": "fixtures/"
         }
     },
     "require-dev": {
         "vimeo/psalm": "~5.13",
-        "innmind/black-box": "^5.6.1",
+        "innmind/black-box": "~5.7",
         "innmind/coding-standard": "~2.0"
     }
 }
