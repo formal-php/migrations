@@ -1,8 +1,8 @@
 {
     "name": "formal/migrations",
     "type": "library",
-    "description": "",
-    "keywords": [],
+    "description": "SQL and Commands migrations",
+    "keywords": ["database", "sql", "commands", "cli", "migrations"],
     "homepage": "http://github.com/formal-php/migrations",
     "license": "MIT",
     "authors": [
