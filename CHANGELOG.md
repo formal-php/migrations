@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Support for `formal/orm` `4`
+
 ## 1.0.0 - 2024-10-04
 
 ### Added
