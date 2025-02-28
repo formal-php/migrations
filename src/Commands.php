@@ -66,8 +66,8 @@ final class Commands implements Runner
     public static function of(
         Manager $storage,
         OperatingSystem $os,
-        callable $build = null,
-        callable $configure = null,
+        ?callable $build = null,
+        ?callable $configure = null,
     ): self {
         return new self(
             $storage,

@@ -26,7 +26,7 @@ final class Configured
     public static function of(
         OperatingSystem $os,
         Manager $storage,
-        \Closure $setup = null,
+        ?\Closure $setup = null,
     ): self {
         return new self($os, $storage, $setup ?? static fn() => null);
     }
