@@ -30,8 +30,13 @@ final class Factory
         return new self($os);
     }
 
-    public function storeVersionsInDatabase(Url $dsn): Factory\Configured
-    {
+    /**
+     * @param ?non-empty-string $table
+     */
+    public function storeVersionsInDatabase(
+        Url $dsn,
+        ?string $table = null,
+    ): Factory\Configured {
         $connection = $this->os->remote()->sql($dsn);
         $aggregates = Aggregates::of(
             Types::of(
@@ -41,6 +46,10 @@ final class Factory
                 ),
             ),
         );
+
+        if (\is_string($table)) {
+            $aggregates = $aggregates->mapName(static fn() => $table);
+        }
 
         return Factory\Configured::of(
             $this->os,

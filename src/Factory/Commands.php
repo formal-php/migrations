@@ -66,8 +66,8 @@ final readonly class Commands
      * @return Applied<TimedOut|Failed|Signaled>
      */
     public function migrate(
-        callable $build = null,
-        callable $configure = null,
+        ?callable $build = null,
+        ?callable $configure = null,
     ): Applied {
         ($this->setup)();
 

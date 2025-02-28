@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 - 2025-02-28
+
+### Added
+
+- Support for `formal/orm` `4`
+- The versions table can be modified in `Factory::storeVersionsInDatabase()` via its second parameter
+
 ## 1.0.0 - 2024-10-04
 
 ### Added
