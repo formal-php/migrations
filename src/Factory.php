@@ -35,7 +35,7 @@ final class Factory
      */
     public function storeVersionsInDatabase(
         Url $dsn,
-        ?string $table = null
+        ?string $table = null,
     ): Factory\Configured {
         $connection = $this->os->remote()->sql($dsn);
         $aggregates = Aggregates::of(
