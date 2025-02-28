@@ -14,6 +14,7 @@ use Innmind\Url\{
     Path,
 };
 use Innmind\Immutable\Sequence;
+use Innmind\BlackBox\Set;
 
 return static function() {
     yield test(
@@ -95,6 +96,61 @@ return static function() {
 
             $assert->true($successfully);
             $assert->count(1, $versions);
+        },
+    );
+
+    yield proof(
+        'Store migrations versions in a specified table name',
+        given(
+            Set\Strings::madeOf(
+                Set\Chars::uppercaseLetter(),
+                Set\Chars::lowercaseLetter(),
+            )->between(1, 64),
+        ),
+        static function($assert, $table) {
+            $os = OS::build();
+
+            $port = \getenv('DB_PORT') ?: '3306';
+            $dsn = Url::of("mysql://root:root@127.0.0.1:$port/example");
+            $sql = $os->remote()->sql($dsn);
+
+            $sql(Query\SQL::of("drop table if exists $table"));
+
+            $migrations = Factory::of($os)
+                ->storeVersionsInDatabase($dsn, $table)
+                ->sql()
+                ->of(Sequence::of(
+                    SQL\Migration::of(
+                        'a',
+                        Query\SQL::of('create table if not exists `test` (`value` int not null)'),
+                        Query\SQL::of('drop table `test`'),
+                    ),
+                ));
+
+            [$successfully, $versions] = $migrations
+                ->migrate($dsn)
+                ->match(
+                    static fn($versions) => [true, $versions],
+                    static fn($_, $versions) => [false, $versions],
+                );
+
+            $assert->true($successfully);
+            $assert->count(1, $versions);
+
+            [$successfully, $versions] = $migrations
+                ->migrate($dsn)
+                ->match(
+                    static fn($versions) => [true, $versions],
+                    static fn($_, $versions) => [false, $versions],
+                );
+
+            $assert->true($successfully);
+            $assert->count(0, $versions);
+
+            $assert->count(
+                1,
+                $sql(Query\SQL::of("select * from $table")),
+            );
         },
     );
 };
