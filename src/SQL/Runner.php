@@ -11,7 +11,10 @@ use Formal\Migrations\{
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
-use Innmind\Immutable\Either;
+use Innmind\Immutable\{
+    Sequence,
+    Either,
+};
 
 /**
  * @internal
@@ -32,15 +35,22 @@ final class Runner
      */
     public function __invoke(All $migrations): Either
     {
-        $sql = $this->os->remote()->sql($this->dsn)->unwrap();
-
-        return Applied::of(
-            $this->os->clock(),
-            $this->storage,
-            $migrations
-                ->excludeAlreadyApplied($this->storage)
-                ->map(static fn($migration) => static fn() => $migration($sql)),
-        );
+        return $this
+            ->os
+            ->remote()
+            ->sql($this->dsn)
+            ->either()
+            ->leftMap(static fn($e) => Failure::of(
+                $e,
+                Sequence::of(),
+            ))
+            ->flatMap(fn($sql) => Applied::of(
+                $this->os->clock(),
+                $this->storage,
+                $migrations
+                    ->excludeAlreadyApplied($this->storage)
+                    ->map(static fn($migration) => static fn() => $migration($sql)),
+            ));
     }
 
     /**
