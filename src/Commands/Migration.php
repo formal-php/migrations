@@ -32,10 +32,7 @@ final class Migration implements MigrationInterface
         return $this
             ->commands
             ->sink(SideEffect::identity)
-            ->attempt(static fn($sideEffect, $command) => $kind($command)
-                ->attempt(static fn($e) => $e)
-                ->map(static fn() => $sideEffect),
-            );
+            ->attempt(static fn($sideEffect, $command) => $kind($command));
     }
 
     /**

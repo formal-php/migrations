@@ -3,14 +3,14 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations\Commands;
 
-use Innmind\Server\Control\{
-    Server\Processes,
-    Server\Command,
-    Server\Process\Success,
+use Innmind\Server\Control\Server\{
+    Processes,
+    Command,
 };
 use Innmind\Immutable\{
     Map,
-    Either,
+    Attempt,
+    SideEffect,
 };
 
 final class Run
@@ -18,7 +18,7 @@ final class Run
     private Processes $processes;
     /** @var callable(Reference): (callable(Command): Command) */
     private $configure;
-    /** @var Map<Reference, Either<Failure, Success>> */
+    /** @var Map<Reference, Attempt<SideEffect>> */
     private Map $alreayRun;
 
     /**
@@ -34,17 +34,20 @@ final class Run
     }
 
     /**
-     * @return Either<Failure, Success>
+     * @return Attempt<SideEffect>
      */
-    public function __invoke(Command|Reference $command): Either
+    public function __invoke(Command|Reference $command): Attempt
     {
         if ($command instanceof Command) {
             return $this
                 ->processes
                 ->execute($command)
-                ->unwrap()
-                ->wait()
-                ->leftMap(static fn($e) => new Failure($e));
+                ->flatMap(
+                    static fn($process) => $process
+                        ->wait()
+                        ->map(SideEffect::identity(...))
+                        ->attempt(static fn($e) => new Failure($e)),
+                );
         }
 
         $result = $this
@@ -55,9 +58,12 @@ final class Run
                 fn() => $this
                     ->processes
                     ->execute(($this->configure)($command)($command->command()))
-                    ->unwrap()
-                    ->wait()
-                    ->leftMap(static fn($e) => new Failure($e)),
+                    ->flatMap(
+                        static fn($process) => $process
+                            ->wait()
+                            ->map(SideEffect::identity(...))
+                            ->attempt(static fn($e) => new Failure($e)),
+                    ),
             );
         $this->alreayRun = ($this->alreayRun)($command, $result);
 
