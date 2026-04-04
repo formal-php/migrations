@@ -11,6 +11,7 @@ use Innmind\Time\Clock;
 use Innmind\Immutable\{
     Sequence,
     Either,
+    Attempt,
 };
 
 final readonly class Applied
@@ -24,16 +25,12 @@ final readonly class Applied
     }
 
     /**
-     * @template T
-     *
-     * @param Sequence<Migration<T>> $migrations
-     * @param T $kind
+     * @param Sequence<callable(): Attempt<non-empty-string>> $migrations
      */
     public static function of(
         Clock $clock,
         Manager $storage,
         Sequence $migrations,
-        mixed $kind,
     ): self {
         $versions = $storage->repository(Version::class);
         /** @var Sequence<Version> */
@@ -44,9 +41,9 @@ final readonly class Applied
         $result = $migrations
             ->sink($applied)
             ->either(
-                static fn($applied, $migration) => $migration($kind)
-                    ->map(static fn() => Version::new(
-                        $migration->name(),
+                static fn($applied, $migrate) => $migrate()
+                    ->map(static fn($name) => Version::new(
+                        $name,
                         $clock,
                     ))
                     ->either()

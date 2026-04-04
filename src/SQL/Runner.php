@@ -35,8 +35,10 @@ final class Runner
             $this->os->clock(),
             $this->storage,
             $migrations
-                ->excludeAlreadyApplied($this->storage),
-            $sql,
+                ->excludeAlreadyApplied($this->storage)
+                ->map(static fn($migration) => static fn() => $migration($sql)->map(
+                    static fn() => $migration->name(),
+                )),
         );
     }
 
