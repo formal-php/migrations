@@ -63,7 +63,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            Runner\Load::files($this->os->filesystem()->mount($location)),
+            Runner\Load::files($this->os->filesystem()->mount($location)->unwrap()),
         );
     }
 

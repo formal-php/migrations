@@ -4,14 +4,13 @@ declare(strict_types = 1);
 namespace Formal\Migrations;
 
 use Formal\ORM\Manager;
-use Innmind\TimeContinuum\Clock;
+use Innmind\Time\Clock;
 use Innmind\Specification\{
     Comparator\Property,
     Sign,
 };
 use Innmind\Immutable\{
     Sequence,
-    Either,
     Maybe,
 };
 
@@ -114,15 +113,12 @@ final readonly class Applied
                 ))
                 ->match(
                     function($version) {
-                        $this->storage->transactional(
-                            function() use ($version) {
-                                $this
-                                    ->storage
-                                    ->repository(Version::class)
-                                    ->put($version);
-
-                                return Either::right(null);
-                            },
+                        $_ = $this->storage->transactional(
+                            fn() => $this
+                                ->storage
+                                ->repository(Version::class)
+                                ->put($version)
+                                ->either(),
                         );
 
                         /** @var Maybe<C> */

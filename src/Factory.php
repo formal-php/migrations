@@ -12,7 +12,7 @@ use Formal\ORM\{
     Adapter\SQL\ShowCreateTable,
 };
 use Innmind\OperatingSystem\OperatingSystem;
-use Innmind\TimeContinuum\PointInTime;
+use Innmind\Time\Point;
 use Innmind\Url\{
     Url,
     Path,
@@ -37,11 +37,11 @@ final class Factory
         Url $dsn,
         ?string $table = null,
     ): Factory\Configured {
-        $connection = $this->os->remote()->sql($dsn);
+        $connection = $this->os->remote()->sql($dsn)->unwrap();
         $aggregates = Aggregates::of(
             Types::of(
                 Support::class(
-                    PointInTime::class,
+                    Point::class,
                     PointInTimeType::new($this->os->clock()),
                 ),
             ),
@@ -56,7 +56,7 @@ final class Factory
             Manager::sql($connection, $aggregates),
             static fn() => ShowCreateTable::of($aggregates)
                 ->ifNotExists()(Version::class)
-                ->foreach($connection),
+                ->foreach(static fn($query) => $connection($query)),
         );
     }
 
@@ -65,11 +65,11 @@ final class Factory
         return Factory\Configured::of(
             $this->os,
             Manager::filesystem(
-                $this->os->filesystem()->mount($location),
+                $this->os->filesystem()->mount($location)->unwrap(),
                 Aggregates::of(
                     Types::of(
                         Support::class(
-                            PointInTime::class,
+                            Point::class,
                             PointInTimeType::new($this->os->clock()),
                         ),
                     ),

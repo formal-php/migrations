@@ -15,12 +15,12 @@ use Formal\ORM\{
     Definition\Type\PointInTimeType,
 };
 use Innmind\OperatingSystem\Factory;
-use Innmind\Filesystem\Adapter\InMemory;
+use Innmind\Filesystem\Adapter;
 use Innmind\Server\Control\Server\{
     Command,
     Process\Failed,
 };
-use Innmind\TimeContinuum\PointInTime;
+use Innmind\Time\Point;
 use Innmind\Url\Path;
 use Innmind\Immutable\Sequence;
 use Innmind\BlackBox\Set;
@@ -30,10 +30,10 @@ return static function() {
         'Commands migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) {
@@ -46,11 +46,11 @@ return static function() {
 
             $migrations = Commands::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -86,7 +86,7 @@ return static function() {
             );
 
             $assert->true($successfully);
-            $assert->count(4, $versions);
+            $assert->same(4, $versions->size());
             $assert->same(
                 [$a, $b, $c, $d],
                 $versions
@@ -130,11 +130,11 @@ return static function() {
         'Commands failing migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
-            Set\Integers::between(1, 255),
+            Set::integers()->between(1, 255),
         ),
         static function($assert, $names, $exit) {
             [$a, $b, $c] = $names;
@@ -146,11 +146,11 @@ return static function() {
 
             $migrations = Commands::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -186,7 +186,7 @@ return static function() {
                 ->object($error)
                 ->instance(Failed::class);
             $assert->same($exit, $error->exitCode()->toInt());
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
             $assert->same(
                 [$a],
                 $versions
