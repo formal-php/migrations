@@ -27,6 +27,8 @@ final class Migration
     }
 
     /**
+     * @internal
+     *
      * @return Attempt<non-empty-string>
      */
     public function __invoke(Connection $connection): Attempt
