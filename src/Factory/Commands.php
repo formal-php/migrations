@@ -4,7 +4,9 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Factory;
 
 use Formal\Migrations\{
-    Commands as Runner,
+    Commands\Runner,
+    Commands\Run,
+    Commands\Reference,
     Applied,
     Migration,
 };
@@ -23,7 +25,7 @@ final readonly class Commands
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
+     * @param Sequence<Migration<Run, TimedOut|Failed|Signaled>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -47,7 +49,7 @@ final readonly class Commands
     }
 
     /**
-     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
+     * @param Sequence<Migration<Run, TimedOut|Failed|Signaled>> $migrations
      */
     public function of(Sequence $migrations): self
     {
@@ -61,7 +63,7 @@ final readonly class Commands
 
     /**
      * @param ?callable(OperatingSystem): Processes $build
-     * @param ?callable(Runner\Reference): (callable(Command): Command) $configure
+     * @param ?callable(Reference): (callable(Command): Command) $configure
      *
      * @return Applied<TimedOut|Failed|Signaled>
      */

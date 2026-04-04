@@ -1,11 +1,11 @@
 <?php
 declare(strict_types = 1);
 
-namespace Formal\Migrations;
+namespace Formal\Migrations\Commands;
 
-use Formal\Migrations\Commands\{
-    Run,
-    Reference,
+use Formal\Migrations\{
+    Migration,
+    Applied,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -18,7 +18,10 @@ use Innmind\Server\Control\Server\{
 };
 use Innmind\Immutable\Sequence;
 
-final class Commands
+/**
+ * @internal
+ */
+final class Runner
 {
     private Manager $storage;
     private OperatingSystem $os;
@@ -62,6 +65,8 @@ final class Commands
     }
 
     /**
+     * @internal
+     *
      * @param ?callable(OperatingSystem): Processes $build
      * @param ?callable(Reference): (callable(Command): Command) $configure
      */
