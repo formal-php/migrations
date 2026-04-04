@@ -55,6 +55,7 @@ return static function() {
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsInDatabase($dsn)
+                ->unwrap()
                 ->sql()
                 ->of(Sequence::of(
                     SQL\Migration::of(
@@ -74,6 +75,7 @@ return static function() {
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsInDatabase($dsn)
+                ->unwrap()
                 ->sql()
                 ->files(Path::of($sql))
                 ->migrate($dsn)
@@ -87,6 +89,7 @@ return static function() {
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsOnFilesystem(Path::of($tmp))
+                ->unwrap()
                 ->commands()
                 ->of(Sequence::of(
                     Commands\Migration::of('echo test'),
@@ -123,6 +126,7 @@ return static function() {
 
             $migrations = Factory::of($os)
                 ->storeVersionsInDatabase($dsn, $table)
+                ->unwrap()
                 ->sql()
                 ->of(Sequence::of(
                     SQL\Migration::of(

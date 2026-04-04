@@ -16,6 +16,8 @@
 - `Formal\Migrations\Commands` has been renamed to `Commands\Runner` and is now flagged as internal
 - `Formal\Migrations\Factory\SQL::migrate()` now returns an `Innmind\Immutable\Either<Formal\Migrations\Failure, Formal\Migrations\Applied>`
 - `Formal\Migrations\Factory\Commands::migrate()` now returns an `Innmind\Immutable\Either<Formal\Migrations\Failure, Formal\Migrations\Applied>`
+- `Formal\Migrations\Factory::storeVersionsInDatabase()` now returns an `Innmind\Immutable\Attempt`
+- `Formal\Migrations\Factory::storeVersionsOnFilesystem()` now returns an `Innmind\Immutable\Attempt`
 
 ### Removed
 
