@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 use Fixtures\Formal\Migrations\Ref;
 use Formal\Migrations\{
-    Commands,
+    Commands\Runner as Commands,
     Commands\Migration,
     Version,
 };

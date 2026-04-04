@@ -2,7 +2,7 @@
 declare(strict_types = 1);
 
 use Formal\Migrations\{
-    SQL,
+    SQL\Runner as SQL,
     SQL\Migration,
     SQL\Load,
     Version,
