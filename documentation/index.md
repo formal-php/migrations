@@ -19,7 +19,10 @@ composer require formal/migrations
 ## Basic usage
 
 ```php
-use Formal\Migrations\Factory;
+use Formal\Migrations\{
+    Factory,
+    Failure,
+};
 use Innmind\OperatingSystem\Factory as OS;
 use Innmind\Url\{
     Url,
@@ -30,11 +33,12 @@ $os = OS::build();
 
 Factory::of($os)
     ->storeVersionsOnFilesystem(Path::of('/some/folder/'))
+    ->unwrap()
     ->sql()
     ->files(Path::of('/path/to/sql/migrations/'))
     ->migrate(Url::of('mysql://user:pwd@127.0.0.1:3306/database'))
     ->match(
         static fn() => print('Everything has been migrated'),
-        static fn(\Throwable $error) => print($error->getMessage()),
+        static fn(Failure $failure) => print($failure->error()->getMessage()),
     );
 ```
