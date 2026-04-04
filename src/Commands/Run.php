@@ -45,6 +45,7 @@ final class Run
             return $this
                 ->processes
                 ->execute($command)
+                ->unwrap()
                 ->wait();
         }
 
@@ -56,6 +57,7 @@ final class Run
                 fn() => $this
                     ->processes
                     ->execute(($this->configure)($command)($command->command()))
+                    ->unwrap()
                     ->wait(),
             );
         $this->alreayRun = ($this->alreayRun)($command, $result);

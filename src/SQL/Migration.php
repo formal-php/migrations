@@ -30,10 +30,13 @@ final class Migration implements MigrationInterface
     ) {
     }
 
+    #[\Override]
     public function __invoke($kind): Either
     {
         try {
-            return Either::right($this->queries->foreach($kind));
+            return Either::right($this->queries->foreach(
+                static fn($query) => $kind($query),
+            ));
         } catch (\Throwable $e) {
             return Either::left($e);
         }
@@ -66,6 +69,7 @@ final class Migration implements MigrationInterface
         );
     }
 
+    #[\Override]
     public function name(): string
     {
         return $this->name;

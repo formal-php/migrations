@@ -31,17 +31,15 @@ final class Migration implements MigrationInterface
     ) {
     }
 
+    #[\Override]
     public function __invoke($kind): Either
     {
-        /** @var Either<TimedOut|Failed|Signaled, SideEffect> */
-        return $this->commands->reduce(
-            Either::right(new SideEffect),
-            static fn(Either $state, $command) => $state->flatMap(
-                static fn() => $kind($command)->map(
-                    static fn() => new SideEffect,
-                ),
-            ),
-        );
+        return $this
+            ->commands
+            ->sink(SideEffect::identity)
+            ->either(static fn($sideEffect, $command) => $kind($command)->map(
+                static fn() => $sideEffect,
+            ));
     }
 
     /**
@@ -56,6 +54,7 @@ final class Migration implements MigrationInterface
         return new self($name, Sequence::of(...$commands));
     }
 
+    #[\Override]
     public function name(): string
     {
         return $this->name;

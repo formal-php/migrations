@@ -4,9 +4,9 @@ declare(strict_types = 1);
 namespace Formal\Migrations;
 
 use Formal\ORM\Id;
-use Innmind\TimeContinuum\{
+use Innmind\Time\{
     Clock,
-    PointInTime,
+    Point,
 };
 
 /**
@@ -19,7 +19,7 @@ final class Version
     private Id $id;
     /** @var non-empty-string */
     private string $name;
-    private PointInTime $appliedAt;
+    private Point $appliedAt;
 
     /**
      * @param Id<self> $id
@@ -28,7 +28,7 @@ final class Version
     private function __construct(
         Id $id,
         string $name,
-        PointInTime $appliedAt,
+        Point $appliedAt,
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -55,7 +55,7 @@ final class Version
         return $this->name;
     }
 
-    public function appliedAt(): PointInTime
+    public function appliedAt(): Point
     {
         return $this->appliedAt;
     }

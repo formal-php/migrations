@@ -30,7 +30,7 @@ migrations/
 Each query inside a file must be separated by a line starting with `--` (1). A query can be written on multiple lines.
 { .annotate }
 
-1. Which the SQL symbol for comments. This allows to write comments in your file.
+1. Which is the SQL symbol for comments. This allows to write comments in your file.
 
 You can then run them via a script like this one:
 
@@ -94,11 +94,11 @@ Factory::of(OS::build())
     ->of(Sequence::of(
         Migration::of(
             'some feature',
-            Query\SQL::of('CREATE TABLE `some_feature` (`value` INT NOT NULL);'),
+            Query::of('CREATE TABLE `some_feature` (`value` INT NOT NULL);'),
         ),
         Migration::of(
             'another feature',
-            Query\SQL::of('CREATE TABLE `another_feature` (`value` INT NOT NULL);'),
+            Query::of('CREATE TABLE `another_feature` (`value` INT NOT NULL);'),
         ),
     ))
     ->migrate($dsn)
@@ -118,7 +118,7 @@ Here the migrations are always run in the order you specify. Even though the mig
 !!! warning ""
     Your migrations name still MUST be unique. Otherwise some won't be run.
 
-In the example above there's only one `Query\SQL` query per migration but you can add multiple ones. And they can be any instance of the `Formal\AccessLayer\Query` interface.
+In the example above there's only one `Query` per migration but you can add multiple ones.
 
 ??? tip
     The above example defines the migrations in the same file as the script. This will quickly become a large file. Instead you should split your migrations by features like this:
@@ -132,7 +132,6 @@ In the example above there's only one `Query\SQL` query per migration but you ca
             Factory,
             SQL\Migration,
         };
-        use Formal\AccessLayer\Query;
         use Innmind\OperatingSystem\Factory as OS;
         use Innmind\Url\Url;
         use Innmind\Immutable\Sequence;
@@ -167,6 +166,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
         namespace FeatureA;
 
         use Formal\Migrations\SQL\Migration;
+        use Formal\AccessLayer\Query;
         use Innmind\Immutable\Sequence;
 
         final class Migrations
@@ -177,7 +177,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
                 return Sequence::of(
                     Migration::of(
                         'init feature A',
-                        SQL::of('CREATE TABLE `featureA` (`value` INT NOT NULL)'),
+                        Query::of('CREATE TABLE `featureA` (`value` INT NOT NULL)'),
                     ),
                     // etc...
                 );
@@ -193,6 +193,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
         namespace FeatureB;
 
         use Formal\Migrations\SQL\Migration;
+        use Formal\AccessLayer\Query;
         use Innmind\Immutable\Sequence;
 
         final class Migrations
@@ -203,7 +204,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
                 return Sequence::of(
                     Migration::of(
                         'init feature B',
-                        SQL::of('CREATE TABLE `featureB` (`value` INT NOT NULL)'),
+                        Query::of('CREATE TABLE `featureB` (`value` INT NOT NULL)'),
                     ),
                     // etc...
                 );
@@ -219,6 +220,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
         namespace Etc;
 
         use Formal\Migrations\SQL\Migration;
+        use Formal\AccessLayer\Query;
         use Innmind\Immutable\Sequence;
 
         final class Migrations
@@ -229,7 +231,7 @@ In the example above there's only one `Query\SQL` query per migration but you ca
                 return Sequence::of(
                     Migration::of(
                         'init etc',
-                        SQL::of('CREATE TABLE `etc` (`value` INT NOT NULL)'),
+                        Query::of('CREATE TABLE `etc` (`value` INT NOT NULL)'),
                     ),
                     // etc...
                 );

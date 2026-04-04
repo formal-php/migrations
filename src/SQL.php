@@ -21,9 +21,10 @@ final class SQL implements Runner
     ) {
     }
 
+    #[\Override]
     public function __invoke(Sequence $migrations): Applied
     {
-        $sql = $this->os->remote()->sql($this->dsn);
+        $sql = $this->os->remote()->sql($this->dsn)->unwrap();
 
         return Applied::of(
             $this->os->clock(),

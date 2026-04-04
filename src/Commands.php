@@ -46,6 +46,7 @@ final class Commands implements Runner
         $this->configure = $configure;
     }
 
+    #[\Override]
     public function __invoke(Sequence $migrations): Applied
     {
         $processes = ($this->build)($this->os);
