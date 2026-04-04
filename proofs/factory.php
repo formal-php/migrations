@@ -119,7 +119,7 @@ return static function() {
             $dsn = Url::of("mysql://root:root@127.0.0.1:$port/example");
             $sql = $os->remote()->sql($dsn)->unwrap();
 
-            $_ = $sql(Query::of("drop table if exists $table"));
+            $_ = $sql(Query::of("drop table if exists `$table`"));
 
             $migrations = Factory::of($os)
                 ->storeVersionsInDatabase($dsn, $table)
@@ -154,7 +154,7 @@ return static function() {
 
             $assert->same(
                 1,
-                $sql(Query::of("select * from $table"))->size(),
+                $sql(Query::of("select * from `$table`"))->size(),
             );
         },
     );
