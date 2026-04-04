@@ -9,10 +9,7 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
 use Innmind\Immutable\Sequence;
 
-/**
- * @implements Runner<Connection, \Throwable>
- */
-final class SQL implements Runner
+final class SQL
 {
     private function __construct(
         private Manager $storage,
@@ -21,7 +18,11 @@ final class SQL implements Runner
     ) {
     }
 
-    #[\Override]
+    /**
+     * @param Sequence<Migration<Connection, \Throwable>> $migrations
+     *
+     * @return Applied<\Throwable>
+     */
     public function __invoke(Sequence $migrations): Applied
     {
         $sql = $this->os->remote()->sql($this->dsn)->unwrap();

@@ -8,6 +8,10 @@
 - Requires `formal/orm:~6.0`
 - Requires `innmind/foundation:~2.1`
 
+### Removed
+
+- `Formal\Migrations\Runner`
+
 ## 1.1.0 - 2025-02-28
 
 ### Added

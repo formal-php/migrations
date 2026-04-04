@@ -18,10 +18,7 @@ use Innmind\Server\Control\Server\{
 };
 use Innmind\Immutable\Sequence;
 
-/**
- * @implements Runner<Run, TimedOut|Failed|Signaled>
- */
-final class Commands implements Runner
+final class Commands
 {
     private Manager $storage;
     private OperatingSystem $os;
@@ -46,7 +43,11 @@ final class Commands implements Runner
         $this->configure = $configure;
     }
 
-    #[\Override]
+    /**
+     * @param Sequence<Migration<Run, TimedOut|Failed|Signaled>> $migrations
+     *
+     * @return Applied<TimedOut|Failed|Signaled>
+     */
     public function __invoke(Sequence $migrations): Applied
     {
         $processes = ($this->build)($this->os);
