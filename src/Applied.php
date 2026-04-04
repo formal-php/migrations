@@ -8,10 +8,6 @@ use Formal\ORM\{
     Adapter\Transaction,
 };
 use Innmind\Time\Clock;
-use Innmind\Specification\{
-    Comparator\Property,
-    Sign,
-};
 use Innmind\Immutable\{
     Sequence,
     Either,
@@ -46,13 +42,6 @@ final readonly class Applied
         $result = Either::right($applied);
 
         $result = $migrations
-            ->exclude(static fn($migration) => $versions->any(
-                Property::of(
-                    'name',
-                    Sign::equality,
-                    $migration->name(),
-                ),
-            ))
             ->sink($applied)
             ->either(
                 static fn($applied, $migration) => $migration($kind)

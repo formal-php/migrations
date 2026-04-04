@@ -6,6 +6,7 @@ use Formal\Migrations\{
     Commands\Runner as Commands,
     Commands\Migration,
     Version,
+    Migrations\All,
 };
 use Formal\ORM\{
     Manager,
@@ -61,7 +62,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -80,7 +81,7 @@ return static function() {
                     $d,
                     Ref::rm,
                 ),
-            ))->match(
+            )))->match(
                 static fn($versions) => [true, $versions],
                 static fn($versions) => [false, $versions],
             );
@@ -161,7 +162,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions, $error] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -176,7 +177,7 @@ return static function() {
                     Command::foreground('echo foo >> test')
                         ->withWorkingDirectory(Path::of($tmp)),
                 ),
-            ))->match(
+            )))->match(
                 static fn($versions) => [true, $versions, null],
                 static fn($error, $versions) => [false, $versions, $error->kind()],
             );

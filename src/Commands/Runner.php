@@ -4,8 +4,8 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Commands;
 
 use Formal\Migrations\{
-    Migration,
     Applied,
+    Migrations\All,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -13,7 +13,6 @@ use Innmind\Server\Control\Server\{
     Processes,
     Command,
 };
-use Innmind\Immutable\Sequence;
 
 /**
  * @internal
@@ -44,9 +43,9 @@ final class Runner
     }
 
     /**
-     * @param Sequence<Migration<Run>> $migrations
+     * @param All<Run> $migrations
      */
-    public function __invoke(Sequence $migrations): Applied
+    public function __invoke(All $migrations): Applied
     {
         $processes = ($this->build)($this->os);
         $run = Run::of($processes, $this->configure);
@@ -54,7 +53,8 @@ final class Runner
         return Applied::of(
             $this->os->clock(),
             $this->storage,
-            $migrations,
+            $migrations
+                ->excludeAlreadyApplied($this->storage),
             $run,
         );
     }

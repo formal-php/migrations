@@ -9,6 +9,7 @@ use Formal\Migrations\{
     Commands\Reference,
     Applied,
     Migration,
+    Migrations\All,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -22,13 +23,13 @@ final readonly class Commands
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Run>> $migrations
+     * @param All<Run> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
         private Manager $storage,
         private \Closure $setup,
-        private Sequence $migrations,
+        private All $migrations,
     ) {
     }
 
@@ -42,7 +43,7 @@ final readonly class Commands
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, Sequence::of());
+        return new self($os, $storage, $setup, All::none(Run::class));
     }
 
     /**
@@ -54,7 +55,7 @@ final readonly class Commands
             $this->os,
             $this->storage,
             $this->setup,
-            $migrations,
+            All::of($migrations),
         );
     }
 

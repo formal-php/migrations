@@ -4,14 +4,13 @@ declare(strict_types = 1);
 namespace Formal\Migrations\SQL;
 
 use Formal\Migrations\{
-    Migration,
     Applied,
+    Migrations\All,
 };
 use Formal\ORM\Manager;
 use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
-use Innmind\Immutable\Sequence;
 
 /**
  * @internal
@@ -26,16 +25,17 @@ final class Runner
     }
 
     /**
-     * @param Sequence<Migration<Connection>> $migrations
+     * @param All<Connection> $migrations
      */
-    public function __invoke(Sequence $migrations): Applied
+    public function __invoke(All $migrations): Applied
     {
         $sql = $this->os->remote()->sql($this->dsn)->unwrap();
 
         return Applied::of(
             $this->os->clock(),
             $this->storage,
-            $migrations,
+            $migrations
+                ->excludeAlreadyApplied($this->storage),
             $sql,
         );
     }

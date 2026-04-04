@@ -6,6 +6,7 @@ use Formal\Migrations\{
     SQL\Migration,
     SQL\Load,
     Version,
+    Migrations\All,
 };
 use Formal\ORM\{
     Manager,
@@ -68,7 +69,7 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Query::of('create table `test` (`value` int not null)'),
@@ -91,7 +92,7 @@ return static function() {
                     Query::of('delete from `test` where `value` > 2'),
                     Query::of('commit'),
                 ),
-            ))->match(
+            )))->match(
                 static fn($versions) => [true, $versions],
                 static fn($versions) => [false, $versions],
             );
@@ -187,7 +188,7 @@ return static function() {
                     ->either(),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Query::of('create table `test` (`value` int not null)'),
@@ -210,7 +211,7 @@ return static function() {
                     Query::of('delete from `test` where `value` > 2'),
                     Query::of('commit'),
                 ),
-            ))->match(
+            )))->match(
                 static fn($versions) => [true, $versions],
                 static fn($versions) => [false, $versions],
             );
@@ -330,7 +331,7 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions] = $migrations(Load::files($filesystem))->match(
+            [$successfully, $versions] = $migrations(All::of(Load::files($filesystem)))->match(
                 static fn($versions) => [true, $versions],
                 static fn($versions) => [false, $versions],
             );
@@ -418,7 +419,7 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions, $error] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Query::of('create table `test` (`value` int not null)'),
@@ -433,7 +434,7 @@ return static function() {
                     Query::of('insert into `test` values (3)'),
                     Query::of('commit'),
                 ),
-            ))->match(
+            )))->match(
                 static fn($versions) => [true, $versions, null],
                 static fn($error, $versions) => [false, $versions, $error],
             );

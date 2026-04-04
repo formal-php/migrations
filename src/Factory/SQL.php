@@ -8,6 +8,7 @@ use Formal\Migrations\{
     SQL\Load,
     Applied,
     Migration,
+    Migrations\All,
 };
 use Formal\ORM\Manager;
 use Formal\AccessLayer\Connection;
@@ -22,13 +23,13 @@ final readonly class SQL
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Connection>> $migrations
+     * @param All<Connection> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
         private Manager $storage,
         private \Closure $setup,
-        private Sequence $migrations,
+        private All $migrations,
     ) {
     }
 
@@ -42,7 +43,7 @@ final readonly class SQL
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, Sequence::of());
+        return new self($os, $storage, $setup, All::none(Connection::class));
     }
 
     /**
@@ -54,7 +55,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            $migrations,
+            All::of($migrations),
         );
     }
 
@@ -64,7 +65,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            Load::files($this->os->filesystem()->mount($location)->unwrap()),
+            All::of(Load::files($this->os->filesystem()->mount($location)->unwrap())),
         );
     }
 
