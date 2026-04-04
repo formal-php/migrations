@@ -4,12 +4,14 @@ declare(strict_types = 1);
 namespace Formal\Migrations\SQL;
 
 use Formal\Migrations\{
-    Applied,
     Migrations\All,
+    Applied,
+    Failure,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
+use Innmind\Immutable\Either;
 
 /**
  * @internal
@@ -25,8 +27,10 @@ final class Runner
 
     /**
      * @param All<Migration> $migrations
+     *
+     * @return Either<Failure, Applied>
      */
-    public function __invoke(All $migrations): Applied
+    public function __invoke(All $migrations): Either
     {
         $sql = $this->os->remote()->sql($this->dsn)->unwrap();
 

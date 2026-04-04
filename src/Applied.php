@@ -17,28 +17,30 @@ use Innmind\Immutable\{
 final readonly class Applied
 {
     /**
-     * @param Either<array{\Throwable, Sequence<Version>}, Sequence<Version>> $result
+     * @param Sequence<Version> $versions
      */
     private function __construct(
-        private Either $result,
+        private Sequence $versions,
     ) {
     }
 
     /**
+     * @internal
+     *
      * @param Sequence<callable(): Attempt<non-empty-string>> $migrations
+     *
+     * @return Either<Failure, self>
      */
     public static function of(
         Clock $clock,
         Manager $storage,
         Sequence $migrations,
-    ): self {
+    ): Either {
         $versions = $storage->repository(Version::class);
         /** @var Sequence<Version> */
         $applied = Sequence::of();
-        /** @var Either<array{\Throwable, Sequence<Version>}, Sequence<Version>> */
-        $result = Either::right($applied);
 
-        $result = $migrations
+        return $migrations
             ->sink($applied)
             ->either(
                 static fn($applied, $migrate) => $migrate()
@@ -62,25 +64,19 @@ final readonly class Applied
                             ->leftMap(static fn($e) => [$e, $applied]),
                         static fn($e) => Either::left([$e, $applied]),
                     ),
-            );
-
-        return new self($result);
+            )
+            ->map(static fn($versions) => new self($versions))
+            ->leftMap(static fn($tuple) => Failure::of(
+                $tuple[0],
+                $tuple[1],
+            ));
     }
 
     /**
-     * @template R
-     *
-     * @param callable(Sequence<Version>): R $successfully
-     * @param callable(\Throwable, Sequence<Version>): R $failed
-     *
-     * @return R
+     * @return Sequence<Version>
      */
-    public function match(callable $successfully, callable $failed): mixed
+    public function versions(): Sequence
     {
-        /** @psalm-suppress MixedArgument */
-        return $this->result->match(
-            static fn($versions) => $successfully($versions),
-            static fn($error) => $failed($error[0], $error[1]),
-        );
+        return $this->versions;
     }
 }

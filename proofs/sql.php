@@ -93,8 +93,8 @@ return static function() {
                     Query::of('commit'),
                 ),
             )))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
@@ -212,8 +212,8 @@ return static function() {
                     Query::of('commit'),
                 ),
             )))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
@@ -332,8 +332,8 @@ return static function() {
             );
 
             [$successfully, $versions] = $migrations(All::of(Load::files($filesystem)))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
@@ -435,8 +435,12 @@ return static function() {
                     Query::of('commit'),
                 ),
             )))->match(
-                static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error],
+                static fn($applied) => [true, $applied->versions(), null],
+                static fn($failure) => [
+                    false,
+                    $failure->applied(),
+                    $failure->error(),
+                ],
             );
 
             $assert->false($successfully);

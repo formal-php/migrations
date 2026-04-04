@@ -6,6 +6,7 @@ namespace Formal\Migrations\Commands;
 use Formal\Migrations\{
     Applied,
     Migrations\All,
+    Failure,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -13,6 +14,7 @@ use Innmind\Server\Control\Server\{
     Processes,
     Command,
 };
+use Innmind\Immutable\Either;
 
 /**
  * @internal
@@ -44,8 +46,10 @@ final class Runner
 
     /**
      * @param All<Migration> $migrations
+     *
+     * @return Either<Failure, Applied>
      */
-    public function __invoke(All $migrations): Applied
+    public function __invoke(All $migrations): Either
     {
         $processes = ($this->build)($this->os);
         $run = Run::of($processes, $this->configure);

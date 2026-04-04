@@ -65,8 +65,8 @@ return static function() {
                 ))
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
@@ -78,8 +78,8 @@ return static function() {
                 ->files(Path::of($sql))
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
@@ -93,8 +93,8 @@ return static function() {
                 ))
                 ->migrate()
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
@@ -135,8 +135,8 @@ return static function() {
             [$successfully, $versions] = $migrations
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
@@ -145,8 +145,8 @@ return static function() {
             [$successfully, $versions] = $migrations
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);

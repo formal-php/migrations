@@ -82,8 +82,8 @@ return static function() {
                     Ref::rm,
                 ),
             )))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
@@ -178,8 +178,12 @@ return static function() {
                         ->withWorkingDirectory(Path::of($tmp)),
                 ),
             )))->match(
-                static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error->kind()],
+                static fn($applied) => [true, $applied->versions(), null],
+                static fn($failure) => [
+                    false,
+                    $failure->applied(),
+                    $failure->error()->kind(),
+                ],
             );
 
             $assert->false($successfully);

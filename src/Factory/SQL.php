@@ -7,8 +7,9 @@ use Formal\Migrations\{
     SQL\Runner,
     SQL\Load,
     SQL\Migration,
-    Applied,
     Migrations\All,
+    Failure,
+    Applied,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -16,7 +17,10 @@ use Innmind\Url\{
     Url,
     Path,
 };
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\{
+    Sequence,
+    Either,
+};
 
 final readonly class SQL
 {
@@ -68,7 +72,10 @@ final readonly class SQL
         );
     }
 
-    public function migrate(Url $dsn): Applied
+    /**
+     * @return Either<Failure, Applied>
+     */
+    public function migrate(Url $dsn): Either
     {
         ($this->setup)();
 

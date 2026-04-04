@@ -7,8 +7,9 @@ use Formal\Migrations\{
     Commands\Runner,
     Commands\Reference,
     Commands\Migration,
-    Applied,
     Migrations\All,
+    Failure,
+    Applied,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
@@ -16,7 +17,10 @@ use Innmind\Server\Control\Server\{
     Processes,
     Command,
 };
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\{
+    Sequence,
+    Either,
+};
 
 final readonly class Commands
 {
@@ -61,11 +65,13 @@ final readonly class Commands
     /**
      * @param ?callable(OperatingSystem): Processes $build
      * @param ?callable(Reference): (callable(Command): Command) $configure
+     *
+     * @return Either<Failure, Applied>
      */
     public function migrate(
         ?callable $build = null,
         ?callable $configure = null,
-    ): Applied {
+    ): Either {
         ($this->setup)();
 
         return Runner::of(
