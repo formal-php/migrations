@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations;
 
-use Formal\ORM\Manager;
+use Formal\ORM\{
+    Manager,
+    Adapter\Transaction,
+};
 use Innmind\Time\Clock;
 use Innmind\Specification\{
     Comparator\Property,
@@ -11,7 +14,7 @@ use Innmind\Specification\{
 };
 use Innmind\Immutable\{
     Sequence,
-    Maybe,
+    Either,
 };
 
 /**
@@ -20,14 +23,10 @@ use Innmind\Immutable\{
 final readonly class Applied
 {
     /**
-     * @param Sequence<Version> $versions
-     * @param Maybe<C> $error
+     * @param Either<array{C|\Throwable, Sequence<Version>}, Sequence<Version>> $result
      */
     private function __construct(
-        private Clock $clock,
-        private Manager $storage,
-        private Sequence $versions,
-        private Maybe $error,
+        private Either $result,
     ) {
     }
 
@@ -47,8 +46,12 @@ final readonly class Applied
         mixed $kind,
     ): self {
         $versions = $storage->repository(Version::class);
+        /** @var Sequence<Version> */
+        $applied = Sequence::of();
+        /** @var Either<array{E, Sequence<Version>}, Sequence<Version>> */
+        $result = Either::right($applied);
 
-        return $migrations
+        $result = $migrations
             ->exclude(static fn($migration) => $versions->any(
                 Property::of(
                     'name',
@@ -56,88 +59,47 @@ final readonly class Applied
                     $migration->name(),
                 ),
             ))
-            ->reduce(
-                self::new($clock, $storage),
-                static fn(self $applied, $migration) => $applied->then(
-                    $kind,
-                    $migration,
-                ),
+            ->sink($applied)
+            ->either(
+                static fn($applied, $migration) => $migration($kind)
+                    ->map(static fn() => Version::new(
+                        $migration->name(),
+                        $clock,
+                    ))
+                    ->eitherWay(
+                        static fn($version) => $storage
+                            ->transactional(
+                                static fn() => $versions
+                                    ->put($version)
+                                    ->either(),
+                            )
+                            ->map(static fn() => ($applied)($version))
+                            ->leftMap(static fn($e) => match (true) {
+                                $e instanceof Transaction\Failure => $e->unwrap(),
+                                default => $e,
+                            })
+                            ->leftMap(static fn($e) => [$e, $applied]),
+                        static fn($e) => Either::left([$e, $applied]),
+                    ),
             );
+
+        return new self($result);
     }
 
     /**
      * @template R
      *
      * @param callable(Sequence<Version>): R $successfully
-     * @param callable(C, Sequence<Version>): R $failed
+     * @param callable(C|\Throwable, Sequence<Version>): R $failed
      *
      * @return R
      */
     public function match(callable $successfully, callable $failed): mixed
     {
         /** @psalm-suppress MixedArgument */
-        return $this->error->match(
-            fn($error) => $failed($error, $this->versions),
-            fn() => $successfully($this->versions),
-        );
-    }
-
-    private static function new(Clock $clock, Manager $storage): self
-    {
-        return new self(
-            $clock,
-            $storage,
-            Sequence::of(),
-            Maybe::nothing(),
-        );
-    }
-
-    /**
-     * @template T
-     *
-     * @param T $kind
-     * @param Migration<T, C> $migration
-     *
-     * @return self<C>
-     */
-    private function then(
-        $kind,
-        Migration $migration,
-    ): self {
-        return $this->error->match(
-            fn() => $this,
-            fn() => $migration($kind)
-                ->map(fn() => Version::new(
-                    $migration->name(),
-                    $this->clock,
-                ))
-                ->match(
-                    function($version) {
-                        $_ = $this->storage->transactional(
-                            fn() => $this
-                                ->storage
-                                ->repository(Version::class)
-                                ->put($version)
-                                ->either(),
-                        );
-
-                        /** @var Maybe<C> */
-                        $error = Maybe::nothing();
-
-                        return new self(
-                            $this->clock,
-                            $this->storage,
-                            ($this->versions)($version),
-                            $error,
-                        );
-                    },
-                    fn($error) => new self(
-                        $this->clock,
-                        $this->storage,
-                        $this->versions,
-                        Maybe::just($error),
-                    ),
-                ),
+        return $this->result->match(
+            static fn($versions) => $successfully($versions),
+            static fn($error) => $failed($error[0], $error[1]),
         );
     }
 }
