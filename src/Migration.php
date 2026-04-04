@@ -10,14 +10,13 @@ use Innmind\Immutable\{
 
 /**
  * @template T
- * @template E
  */
 interface Migration
 {
     /**
      * @param T $kind
      *
-     * @return Either<E, SideEffect>
+     * @return Either<\Throwable, SideEffect>
      */
     public function __invoke($kind): Either;
 

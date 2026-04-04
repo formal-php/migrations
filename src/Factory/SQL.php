@@ -22,7 +22,7 @@ final readonly class SQL
 {
     /**
      * @param \Closure(): void $setup
-     * @param Sequence<Migration<Connection, \Throwable>> $migrations
+     * @param Sequence<Migration<Connection>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -46,7 +46,7 @@ final readonly class SQL
     }
 
     /**
-     * @param Sequence<Migration<Connection, \Throwable>> $migrations
+     * @param Sequence<Migration<Connection>> $migrations
      */
     public function of(Sequence $migrations): self
     {
@@ -68,9 +68,6 @@ final readonly class SQL
         );
     }
 
-    /**
-     * @return Applied<\Throwable>
-     */
     public function migrate(Url $dsn): Applied
     {
         ($this->setup)();

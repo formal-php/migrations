@@ -12,9 +12,6 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Server\Control\Server\{
     Processes,
     Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
 };
 use Innmind\Immutable\Sequence;
 
@@ -47,9 +44,7 @@ final class Runner
     }
 
     /**
-     * @param Sequence<Migration<Run, TimedOut|Failed|Signaled>> $migrations
-     *
-     * @return Applied<TimedOut|Failed|Signaled>
+     * @param Sequence<Migration<Run>> $migrations
      */
     public function __invoke(Sequence $migrations): Applied
     {

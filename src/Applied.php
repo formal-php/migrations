@@ -17,13 +17,10 @@ use Innmind\Immutable\{
     Either,
 };
 
-/**
- * @template C
- */
 final readonly class Applied
 {
     /**
-     * @param Either<array{C|\Throwable, Sequence<Version>}, Sequence<Version>> $result
+     * @param Either<array{\Throwable, Sequence<Version>}, Sequence<Version>> $result
      */
     private function __construct(
         private Either $result,
@@ -32,12 +29,9 @@ final readonly class Applied
 
     /**
      * @template T
-     * @template E
      *
-     * @param Sequence<Migration<T, E>> $migrations
+     * @param Sequence<Migration<T>> $migrations
      * @param T $kind
-     *
-     * @return self<E>
      */
     public static function of(
         Clock $clock,
@@ -48,7 +42,7 @@ final readonly class Applied
         $versions = $storage->repository(Version::class);
         /** @var Sequence<Version> */
         $applied = Sequence::of();
-        /** @var Either<array{E, Sequence<Version>}, Sequence<Version>> */
+        /** @var Either<array{\Throwable, Sequence<Version>}, Sequence<Version>> */
         $result = Either::right($applied);
 
         $result = $migrations
@@ -90,7 +84,7 @@ final readonly class Applied
      * @template R
      *
      * @param callable(Sequence<Version>): R $successfully
-     * @param callable(C|\Throwable, Sequence<Version>): R $failed
+     * @param callable(\Throwable, Sequence<Version>): R $failed
      *
      * @return R
      */

@@ -16,7 +16,7 @@ use Innmind\Immutable\{
 };
 
 /**
- * @implements MigrationInterface<Connection, \Throwable>
+ * @implements MigrationInterface<Connection>
  */
 final class Migration implements MigrationInterface
 {

@@ -9,7 +9,7 @@
 - Requires `innmind/foundation:~2.1`
 - `Formal\Migrations\SQL` has been renamed to `SQL\Runner` and is now flagged as internal
 - `Formal\Migrations\Commands` has been renamed to `Commands\Runner` and is now flagged as internal
-- `Formal\Migrations\Applied` error can also contain an exception now
+- `Formal\Migrations\Applied` error is now an exception
 
 ### Removed
 

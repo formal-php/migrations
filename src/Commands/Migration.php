@@ -4,12 +4,7 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Commands;
 
 use Formal\Migrations\Migration as MigrationInterface;
-use Innmind\Server\Control\Server\{
-    Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
-};
+use Innmind\Server\Control\Server\Command;
 use Innmind\Immutable\{
     Sequence,
     Either,
@@ -17,7 +12,7 @@ use Innmind\Immutable\{
 };
 
 /**
- * @implements MigrationInterface<Run, TimedOut|Failed|Signaled>
+ * @implements MigrationInterface<Run>
  */
 final class Migration implements MigrationInterface
 {

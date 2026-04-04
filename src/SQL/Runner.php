@@ -26,9 +26,7 @@ final class Runner
     }
 
     /**
-     * @param Sequence<Migration<Connection, \Throwable>> $migrations
-     *
-     * @return Applied<\Throwable>
+     * @param Sequence<Migration<Connection>> $migrations
      */
     public function __invoke(Sequence $migrations): Applied
     {

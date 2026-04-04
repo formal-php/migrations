@@ -6,9 +6,6 @@ namespace Formal\Migrations\Commands;
 use Innmind\Server\Control\{
     Server\Processes,
     Server\Command,
-    Server\Process\TimedOut,
-    Server\Process\Failed,
-    Server\Process\Signaled,
     Server\Process\Success,
 };
 use Innmind\Immutable\{
@@ -21,7 +18,7 @@ final class Run
     private Processes $processes;
     /** @var callable(Reference): (callable(Command): Command) */
     private $configure;
-    /** @var Map<Reference, Either<TimedOut|Failed|Signaled, Success>> */
+    /** @var Map<Reference, Either<Failure, Success>> */
     private Map $alreayRun;
 
     /**
@@ -37,7 +34,7 @@ final class Run
     }
 
     /**
-     * @return Either<TimedOut|Failed|Signaled, Success>
+     * @return Either<Failure, Success>
      */
     public function __invoke(Command|Reference $command): Either
     {
@@ -46,7 +43,8 @@ final class Run
                 ->processes
                 ->execute($command)
                 ->unwrap()
-                ->wait();
+                ->wait()
+                ->leftMap(static fn($e) => new Failure($e));
         }
 
         $result = $this
@@ -58,7 +56,8 @@ final class Run
                     ->processes
                     ->execute(($this->configure)($command)($command->command()))
                     ->unwrap()
-                    ->wait(),
+                    ->wait()
+                    ->leftMap(static fn($e) => new Failure($e)),
             );
         $this->alreayRun = ($this->alreayRun)($command, $result);
 
