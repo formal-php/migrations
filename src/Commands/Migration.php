@@ -23,14 +23,15 @@ final class Migration
     }
 
     /**
-     * @return Attempt<SideEffect>
+     * @return Attempt<non-empty-string>
      */
     public function __invoke(Run $run): Attempt
     {
         return $this
             ->commands
             ->sink(SideEffect::identity)
-            ->attempt(static fn($sideEffect, $command) => $run($command));
+            ->attempt(static fn($sideEffect, $command) => $run($command))
+            ->map(fn() => $this->name);
     }
 
     /**

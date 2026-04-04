@@ -35,9 +35,7 @@ final class Runner
             $this->storage,
             $migrations
                 ->excludeAlreadyApplied($this->storage)
-                ->map(static fn($migration) => static fn() => $migration($sql)->map(
-                    static fn() => $migration->name(),
-                )),
+                ->map(static fn($migration) => static fn() => $migration($sql)),
         );
     }
 

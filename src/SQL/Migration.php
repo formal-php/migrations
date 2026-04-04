@@ -12,7 +12,6 @@ use Innmind\Immutable\{
     Sequence,
     Attempt,
     Predicate\Instance,
-    SideEffect,
 };
 
 final class Migration
@@ -28,13 +27,13 @@ final class Migration
     }
 
     /**
-     * @return Attempt<SideEffect>
+     * @return Attempt<non-empty-string>
      */
     public function __invoke(Connection $connection): Attempt
     {
         return Attempt::of(fn() => $this->queries->foreach(
             static fn($query) => $connection($query),
-        ));
+        ))->map(fn() => $this->name);
     }
 
     /**
