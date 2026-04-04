@@ -11,6 +11,9 @@ use Innmind\Server\Control\Server\Process\{
 
 final class Failure extends \RuntimeException
 {
+    /**
+     * @internal
+     */
     public function __construct(
         private TimedOut|Failed|Signaled $error,
     ) {
