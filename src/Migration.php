@@ -5,7 +5,7 @@ namespace Formal\Migrations;
 
 use Innmind\Immutable\{
     SideEffect,
-    Either,
+    Attempt,
 };
 
 /**
@@ -16,9 +16,9 @@ interface Migration
     /**
      * @param T $kind
      *
-     * @return Either<\Throwable, SideEffect>
+     * @return Attempt<SideEffect>
      */
-    public function __invoke($kind): Either;
+    public function __invoke($kind): Attempt;
 
     /**
      * @return non-empty-string

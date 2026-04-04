@@ -7,7 +7,7 @@ use Formal\Migrations\Migration as MigrationInterface;
 use Innmind\Server\Control\Server\Command;
 use Innmind\Immutable\{
     Sequence,
-    Either,
+    Attempt,
     SideEffect,
 };
 
@@ -27,14 +27,15 @@ final class Migration implements MigrationInterface
     }
 
     #[\Override]
-    public function __invoke($kind): Either
+    public function __invoke($kind): Attempt
     {
         return $this
             ->commands
             ->sink(SideEffect::identity)
-            ->either(static fn($sideEffect, $command) => $kind($command)->map(
-                static fn() => $sideEffect,
-            ));
+            ->attempt(static fn($sideEffect, $command) => $kind($command)
+                ->attempt(static fn($e) => $e)
+                ->map(static fn() => $sideEffect),
+            );
     }
 
     /**

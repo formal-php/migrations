@@ -11,7 +11,7 @@ use Formal\AccessLayer\{
 use Innmind\Filesystem\File;
 use Innmind\Immutable\{
     Sequence,
-    Either,
+    Attempt,
     Predicate\Instance,
 };
 
@@ -31,15 +31,11 @@ final class Migration implements MigrationInterface
     }
 
     #[\Override]
-    public function __invoke($kind): Either
+    public function __invoke($kind): Attempt
     {
-        try {
-            return Either::right($this->queries->foreach(
-                static fn($query) => $kind($query),
-            ));
-        } catch (\Throwable $e) {
-            return Either::left($e);
-        }
+        return Attempt::of(fn() => $this->queries->foreach(
+            static fn($query) => $kind($query),
+        ));
     }
 
     /**

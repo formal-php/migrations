@@ -60,6 +60,7 @@ final readonly class Applied
                         $migration->name(),
                         $clock,
                     ))
+                    ->either()
                     ->eitherWay(
                         static fn($version) => $storage
                             ->transactional(
