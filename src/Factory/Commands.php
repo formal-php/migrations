@@ -5,10 +5,9 @@ namespace Formal\Migrations\Factory;
 
 use Formal\Migrations\{
     Commands\Runner,
-    Commands\Run,
     Commands\Reference,
+    Commands\Migration,
     Applied,
-    Migration,
     Migrations\All,
 };
 use Formal\ORM\Manager;
@@ -23,7 +22,7 @@ final readonly class Commands
 {
     /**
      * @param \Closure(): void $setup
-     * @param All<Run> $migrations
+     * @param All<Migration> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -43,11 +42,11 @@ final readonly class Commands
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, All::none(Run::class));
+        return new self($os, $storage, $setup, All::none(Migration::class));
     }
 
     /**
-     * @param Sequence<Migration<Run>> $migrations
+     * @param Sequence<Migration> $migrations
      */
     public function of(Sequence $migrations): self
     {

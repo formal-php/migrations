@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations\SQL;
 
-use Formal\Migrations\Migration as MigrationInterface;
 use Formal\AccessLayer\{
     Connection,
     Query,
@@ -13,12 +12,10 @@ use Innmind\Immutable\{
     Sequence,
     Attempt,
     Predicate\Instance,
+    SideEffect,
 };
 
-/**
- * @implements MigrationInterface<Connection>
- */
-final class Migration implements MigrationInterface
+final class Migration
 {
     /**
      * @param non-empty-string $name
@@ -30,11 +27,13 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    #[\Override]
-    public function __invoke($kind): Attempt
+    /**
+     * @return Attempt<SideEffect>
+     */
+    public function __invoke(Connection $connection): Attempt
     {
         return Attempt::of(fn() => $this->queries->foreach(
-            static fn($query) => $kind($query),
+            static fn($query) => $connection($query),
         ));
     }
 
@@ -65,7 +64,9 @@ final class Migration implements MigrationInterface
         );
     }
 
-    #[\Override]
+    /**
+     * @return non-empty-string
+     */
     public function name(): string
     {
         return $this->name;

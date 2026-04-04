@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations\Commands;
 
-use Formal\Migrations\Migration as MigrationInterface;
 use Innmind\Server\Control\Server\Command;
 use Innmind\Immutable\{
     Sequence,
@@ -11,10 +10,7 @@ use Innmind\Immutable\{
     SideEffect,
 };
 
-/**
- * @implements MigrationInterface<Run>
- */
-final class Migration implements MigrationInterface
+final class Migration
 {
     /**
      * @param non-empty-string $name
@@ -26,13 +22,15 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    #[\Override]
-    public function __invoke($kind): Attempt
+    /**
+     * @return Attempt<SideEffect>
+     */
+    public function __invoke(Run $run): Attempt
     {
         return $this
             ->commands
             ->sink(SideEffect::identity)
-            ->attempt(static fn($sideEffect, $command) => $kind($command));
+            ->attempt(static fn($sideEffect, $command) => $run($command));
     }
 
     /**
@@ -47,7 +45,9 @@ final class Migration implements MigrationInterface
         return new self($name, Sequence::of(...$commands));
     }
 
-    #[\Override]
+    /**
+     * @return non-empty-string
+     */
     public function name(): string
     {
         return $this->name;

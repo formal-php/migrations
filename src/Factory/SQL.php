@@ -6,12 +6,11 @@ namespace Formal\Migrations\Factory;
 use Formal\Migrations\{
     SQL\Runner,
     SQL\Load,
+    SQL\Migration,
     Applied,
-    Migration,
     Migrations\All,
 };
 use Formal\ORM\Manager;
-use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\{
     Url,
@@ -23,7 +22,7 @@ final readonly class SQL
 {
     /**
      * @param \Closure(): void $setup
-     * @param All<Connection> $migrations
+     * @param All<Migration> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
@@ -43,11 +42,11 @@ final readonly class SQL
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, All::none(Connection::class));
+        return new self($os, $storage, $setup, All::none(Migration::class));
     }
 
     /**
-     * @param Sequence<Migration<Connection>> $migrations
+     * @param Sequence<Migration> $migrations
      */
     public function of(Sequence $migrations): self
     {

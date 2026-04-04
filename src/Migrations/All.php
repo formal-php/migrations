@@ -4,7 +4,8 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Migrations;
 
 use Formal\Migrations\{
-    Migration,
+    Commands,
+    SQL,
     Version,
 };
 use Formal\ORM\Manager;
@@ -16,12 +17,12 @@ use Innmind\Immutable\Sequence;
 
 /**
  * @internal
- * @template T
+ * @template T of Commands\Migration|SQL\Migration
  */
 final class All
 {
     /**
-     * @param Sequence<Migration<T>> $migrations
+     * @param Sequence<T> $migrations
      */
     private function __construct(
         private Sequence $migrations,
@@ -30,9 +31,9 @@ final class All
 
     /**
      * @internal
-     * @template A
+     * @template A of Commands\Migration|SQL\Migration
      *
-     * @param Sequence<Migration<A>> $migrations
+     * @param Sequence<A> $migrations
      *
      * @return self<A>
      */
@@ -43,20 +44,21 @@ final class All
 
     /**
      * @internal
-     * @template C of object
+     * @template C of Commands\Migration
+     * @template S of SQL\Migration
      *
-     * @param class-string<C> $type
+     * @param class-string<C>|class-string<S> $type
      *
-     * @return self<C>
+     * @return self<C|S>
      */
     public static function none(string $type): self
     {
-        /** @var self<C> */
+        /** @var self<C|S> */
         return new self(Sequence::of());
     }
 
     /**
-     * @return Sequence<Migration<T>>
+     * @return Sequence<T>
      */
     public function excludeAlreadyApplied(Manager $storage): Sequence
     {

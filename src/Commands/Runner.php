@@ -43,7 +43,7 @@ final class Runner
     }
 
     /**
-     * @param All<Run> $migrations
+     * @param All<Migration> $migrations
      */
     public function __invoke(All $migrations): Applied
     {

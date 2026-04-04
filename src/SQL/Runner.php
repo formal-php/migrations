@@ -8,7 +8,6 @@ use Formal\Migrations\{
     Migrations\All,
 };
 use Formal\ORM\Manager;
-use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
 
@@ -25,7 +24,7 @@ final class Runner
     }
 
     /**
-     * @param All<Connection> $migrations
+     * @param All<Migration> $migrations
      */
     public function __invoke(All $migrations): Applied
     {
