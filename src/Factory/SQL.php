@@ -28,13 +28,13 @@ final readonly class SQL
 {
     /**
      * @param \Closure(): Attempt<SideEffect> $setup
-     * @param All<Migration> $migrations
+     * @param Attempt<All<Migration>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
         private Manager $storage,
         private \Closure $setup,
-        private All $migrations,
+        private Attempt $migrations,
     ) {
     }
 
@@ -48,7 +48,12 @@ final readonly class SQL
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, All::none(Migration::class));
+        return new self(
+            $os,
+            $storage,
+            $setup,
+            Attempt::result(All::none(Migration::class)),
+        );
     }
 
     /**
@@ -60,7 +65,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            All::of($migrations),
+            Attempt::result(All::of($migrations)),
         );
     }
 
@@ -70,7 +75,12 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            All::of(Load::files($this->os->filesystem()->mount($location)->unwrap())),
+            $this
+                ->os
+                ->filesystem()
+                ->mount($location)
+                ->map(Load::files(...))
+                ->map(All::of(...)),
         );
     }
 
@@ -80,13 +90,14 @@ final readonly class SQL
     public function migrate(Url $dsn): Either
     {
         return ($this->setup)()
+            ->flatMap(fn() => $this->migrations)
             ->either()
             ->leftMap(static fn($e) => Failure::of(
                 $e,
                 Sequence::of(),
             ))
             ->flatMap(
-                fn() => Runner::of($this->storage, $this->os, $dsn)($this->migrations),
+                fn($migrations) => Runner::of($this->storage, $this->os, $dsn)($migrations),
             );
     }
 }
