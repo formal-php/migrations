@@ -17,6 +17,7 @@ use Innmind\Url\{
     Url,
     Path,
 };
+use Innmind\Immutable\Attempt;
 
 final class Factory
 {
@@ -54,9 +55,11 @@ final class Factory
         return Factory\Configured::of(
             $this->os,
             Manager::sql($connection, $aggregates),
-            static fn() => ShowCreateTable::of($aggregates)
-                ->ifNotExists()(Version::class)
-                ->foreach(static fn($query) => $connection($query)),
+            static fn() => Attempt::of(
+                static fn() => ShowCreateTable::of($aggregates)
+                    ->ifNotExists()(Version::class)
+                    ->foreach(static fn($query) => $connection($query)),
+            ),
         );
     }
 

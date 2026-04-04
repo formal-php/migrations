@@ -20,12 +20,14 @@ use Innmind\Url\{
 use Innmind\Immutable\{
     Sequence,
     Either,
+    Attempt,
+    SideEffect,
 };
 
 final readonly class SQL
 {
     /**
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      * @param All<Migration> $migrations
      */
     private function __construct(
@@ -39,7 +41,7 @@ final readonly class SQL
     /**
      * @internal
      *
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      */
     public static function new(
         OperatingSystem $os,
@@ -77,8 +79,14 @@ final readonly class SQL
      */
     public function migrate(Url $dsn): Either
     {
-        ($this->setup)();
-
-        return Runner::of($this->storage, $this->os, $dsn)($this->migrations);
+        return ($this->setup)()
+            ->either()
+            ->leftMap(static fn($e) => Failure::of(
+                $e,
+                Sequence::of(),
+            ))
+            ->flatMap(
+                fn() => Runner::of($this->storage, $this->os, $dsn)($this->migrations),
+            );
     }
 }

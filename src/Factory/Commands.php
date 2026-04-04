@@ -20,12 +20,14 @@ use Innmind\Server\Control\Server\{
 use Innmind\Immutable\{
     Sequence,
     Either,
+    Attempt,
+    SideEffect,
 };
 
 final readonly class Commands
 {
     /**
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      * @param All<Migration> $migrations
      */
     private function __construct(
@@ -39,7 +41,7 @@ final readonly class Commands
     /**
      * @internal
      *
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      */
     public static function new(
         OperatingSystem $os,
@@ -72,13 +74,17 @@ final readonly class Commands
         ?callable $build = null,
         ?callable $configure = null,
     ): Either {
-        ($this->setup)();
-
-        return Runner::of(
-            $this->storage,
-            $this->os,
-            $build,
-            $configure,
-        )($this->migrations);
+        return ($this->setup)()
+            ->either()
+            ->leftMap(static fn($e) => Failure::of(
+                $e,
+                Sequence::of(),
+            ))
+            ->flatMap(fn() => Runner::of(
+                $this->storage,
+                $this->os,
+                $build,
+                $configure,
+            )($this->migrations));
     }
 }
