@@ -178,7 +178,7 @@ return static function() {
                 ),
             ))->match(
                 static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error],
+                static fn($error, $versions) => [false, $versions, $error->kind()],
             );
 
             $assert->false($successfully);
