@@ -1,15 +1,22 @@
 <?php
 declare(strict_types = 1);
 
-namespace Formal\Migrations;
+namespace Formal\Migrations\SQL;
 
+use Formal\Migrations\{
+    Migration,
+    Applied,
+};
 use Formal\ORM\Manager;
 use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\Url;
 use Innmind\Immutable\Sequence;
 
-final class SQL
+/**
+ * @internal
+ */
+final class Runner
 {
     private function __construct(
         private Manager $storage,
@@ -35,6 +42,9 @@ final class SQL
         );
     }
 
+    /**
+     * @internal
+     */
     public static function of(
         Manager $storage,
         OperatingSystem $os,

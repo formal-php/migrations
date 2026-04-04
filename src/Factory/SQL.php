@@ -4,7 +4,8 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Factory;
 
 use Formal\Migrations\{
-    SQL as Runner,
+    SQL\Runner,
+    SQL\Load,
     Applied,
     Migration,
 };
@@ -63,7 +64,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            Runner\Load::files($this->os->filesystem()->mount($location)->unwrap()),
+            Load::files($this->os->filesystem()->mount($location)->unwrap()),
         );
     }
 

@@ -7,6 +7,7 @@
 - Requires PHP `8.4`
 - Requires `formal/orm:~6.0`
 - Requires `innmind/foundation:~2.1`
+- `Formal\Migrations\SQL` has been renamed to `SQL\Runner` and is now flagged as internal
 
 ### Removed
 
