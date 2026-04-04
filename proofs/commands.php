@@ -3,9 +3,10 @@ declare(strict_types = 1);
 
 use Fixtures\Formal\Migrations\Ref;
 use Formal\Migrations\{
-    Commands,
+    Commands\Runner as Commands,
     Commands\Migration,
     Version,
+    Migrations\All,
 };
 use Formal\ORM\{
     Manager,
@@ -15,12 +16,12 @@ use Formal\ORM\{
     Definition\Type\PointInTimeType,
 };
 use Innmind\OperatingSystem\Factory;
-use Innmind\Filesystem\Adapter\InMemory;
+use Innmind\Filesystem\Adapter;
 use Innmind\Server\Control\Server\{
     Command,
     Process\Failed,
 };
-use Innmind\TimeContinuum\PointInTime;
+use Innmind\Time\Point;
 use Innmind\Url\Path;
 use Innmind\Immutable\Sequence;
 use Innmind\BlackBox\Set;
@@ -30,10 +31,10 @@ return static function() {
         'Commands migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) {
@@ -46,11 +47,11 @@ return static function() {
 
             $migrations = Commands::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -61,7 +62,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -80,13 +81,13 @@ return static function() {
                     $d,
                     Ref::rm,
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+            )))->match(
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
-            $assert->count(4, $versions);
+            $assert->same(4, $versions->size());
             $assert->same(
                 [$a, $b, $c, $d],
                 $versions
@@ -130,11 +131,11 @@ return static function() {
         'Commands failing migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
-            Set\Integers::between(1, 255),
+            Set::integers()->between(1, 255),
         ),
         static function($assert, $names, $exit) {
             [$a, $b, $c] = $names;
@@ -146,11 +147,11 @@ return static function() {
 
             $migrations = Commands::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -161,7 +162,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions, $error] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -176,9 +177,13 @@ return static function() {
                     Command::foreground('echo foo >> test')
                         ->withWorkingDirectory(Path::of($tmp)),
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error],
+            )))->match(
+                static fn($applied) => [true, $applied->versions(), null],
+                static fn($failure) => [
+                    false,
+                    $failure->applied(),
+                    $failure->error()->kind(),
+                ],
             );
 
             $assert->false($successfully);
@@ -186,7 +191,7 @@ return static function() {
                 ->object($error)
                 ->instance(Failed::class);
             $assert->same($exit, $error->exitCode()->toInt());
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
             $assert->same(
                 [$a],
                 $versions

@@ -5,11 +5,15 @@ namespace Formal\Migrations\Factory;
 
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 final class Configured
 {
     /**
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      */
     private function __construct(
         private OperatingSystem $os,
@@ -21,14 +25,14 @@ final class Configured
     /**
      * @internal
      *
-     * @param ?\Closure(): void $setup
+     * @param ?\Closure(): Attempt<SideEffect> $setup
      */
     public static function of(
         OperatingSystem $os,
         Manager $storage,
         ?\Closure $setup = null,
     ): self {
-        return new self($os, $storage, $setup ?? static fn() => null);
+        return new self($os, $storage, $setup ?? static fn() => Attempt::result(SideEffect::identity));
     }
 
     public function sql(): SQL

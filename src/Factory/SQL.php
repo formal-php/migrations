@@ -4,48 +4,60 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Factory;
 
 use Formal\Migrations\{
-    SQL as Runner,
+    SQL\Runner,
+    SQL\Load,
+    SQL\Migration,
+    Migrations\All,
+    Failure,
     Applied,
-    Migration,
 };
 use Formal\ORM\Manager;
-use Formal\AccessLayer\Connection;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Url\{
     Url,
     Path,
 };
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\{
+    Sequence,
+    Either,
+    Attempt,
+    SideEffect,
+};
 
 final readonly class SQL
 {
     /**
-     * @param \Closure(): void $setup
-     * @param Sequence<Migration<Connection, \Throwable>> $migrations
+     * @param \Closure(): Attempt<SideEffect> $setup
+     * @param Attempt<All<Migration>> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
         private Manager $storage,
         private \Closure $setup,
-        private Sequence $migrations,
+        private Attempt $migrations,
     ) {
     }
 
     /**
      * @internal
      *
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      */
     public static function new(
         OperatingSystem $os,
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, Sequence::of());
+        return new self(
+            $os,
+            $storage,
+            $setup,
+            Attempt::result(All::none(Migration::class)),
+        );
     }
 
     /**
-     * @param Sequence<Migration<Connection, \Throwable>> $migrations
+     * @param Sequence<Migration> $migrations
      */
     public function of(Sequence $migrations): self
     {
@@ -53,7 +65,7 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            $migrations,
+            Attempt::result(All::of($migrations)),
         );
     }
 
@@ -63,17 +75,29 @@ final readonly class SQL
             $this->os,
             $this->storage,
             $this->setup,
-            Runner\Load::files($this->os->filesystem()->mount($location)),
+            $this
+                ->os
+                ->filesystem()
+                ->mount($location)
+                ->map(Load::files(...))
+                ->map(All::of(...)),
         );
     }
 
     /**
-     * @return Applied<\Throwable>
+     * @return Either<Failure, Applied>
      */
-    public function migrate(Url $dsn): Applied
+    public function migrate(Url $dsn): Either
     {
-        ($this->setup)();
-
-        return Runner::of($this->storage, $this->os, $dsn)($this->migrations);
+        return ($this->setup)()
+            ->flatMap(fn() => $this->migrations)
+            ->either()
+            ->leftMap(static fn($e) => Failure::of(
+                $e,
+                Sequence::of(),
+            ))
+            ->flatMap(
+                fn($migrations) => Runner::of($this->storage, $this->os, $dsn)($migrations),
+            );
     }
 }

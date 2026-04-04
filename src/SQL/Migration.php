@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations\SQL;
 
-use Formal\Migrations\Migration as MigrationInterface;
 use Formal\AccessLayer\{
     Connection,
     Query,
@@ -11,14 +10,11 @@ use Formal\AccessLayer\{
 use Innmind\Filesystem\File;
 use Innmind\Immutable\{
     Sequence,
-    Either,
+    Attempt,
     Predicate\Instance,
 };
 
-/**
- * @implements MigrationInterface<Connection, \Throwable>
- */
-final class Migration implements MigrationInterface
+final class Migration
 {
     /**
      * @param non-empty-string $name
@@ -30,13 +26,16 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    public function __invoke($kind): Either
+    /**
+     * @internal
+     *
+     * @return Attempt<non-empty-string>
+     */
+    public function __invoke(Connection $connection): Attempt
     {
-        try {
-            return Either::right($this->queries->foreach($kind));
-        } catch (\Throwable $e) {
-            return Either::left($e);
-        }
+        return Attempt::of(fn() => $this->queries->foreach(
+            static fn($query) => $connection($query),
+        ))->map(fn() => $this->name);
     }
 
     /**
@@ -66,6 +65,9 @@ final class Migration implements MigrationInterface
         );
     }
 
+    /**
+     * @return non-empty-string
+     */
     public function name(): string
     {
         return $this->name;

@@ -18,14 +18,10 @@ declare(strict_types = 1);
 use Formal\Migrations\{
     Factory,
     Commands\Migration,
+    Failure,
 };
 use Innmind\OperatingSystem\Factory as OS;
-use Innmind\Server\Control\Server\{
-    Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
-};
+use Innmind\Server\Control\Server\Command;
 use Innmind\Url\Url;
 use Innmind\Immutable\Sequence;
 
@@ -35,6 +31,7 @@ Factory::of(OS::build())
     ->storeVersionsInDatabase(
         Url::of('mysql://user:pwd@127.0.0.1:3306/database'),
     )
+    ->unwrap()
     ->commands()
     ->of(Sequence::of(
         Migration::of(
@@ -47,9 +44,9 @@ Factory::of(OS::build())
     ->migrate()
     ->match(
         static fn() => print('Everything has been migrated'),
-        static fn(TimedOut|Failed|Signaled $error) => printf(
+        static fn(Failure $failure) => printf(
             'Migrations failed with : %s',
-            $error::class,
+            $failure->error()::class,
         ),
     );
 ```
@@ -83,14 +80,10 @@ For this kind of situation you should use `Reference`s.
     use Formal\Migrations\{
         Factory,
         Commands\Migration,
+        Failure,
     };
     use Innmind\OperatingSystem\Factory as OS;
-    use Innmind\Server\Control\Server\{
-        Command,
-        Process\TimedOut,
-        Process\Failed,
-        Process\Signaled,
-    };
+    use Innmind\Server\Control\Server\Command;
     use Innmind\Url\Url;
     use Innmind\Immutable\Sequence;
 
@@ -100,6 +93,7 @@ For this kind of situation you should use `Reference`s.
         ->storeVersionsInDatabase(
             Url::of('mysql://user:pwd@127.0.0.1:3306/database'),
         )
+        ->unwrap()
         ->commands()
         ->of(Sequence::of(
             Migration::of(
@@ -118,9 +112,9 @@ For this kind of situation you should use `Reference`s.
         ->migrate()
         ->match(
             static fn() => print('Everything has been migrated'),
-            static fn(TimedOut|Failed|Signaled $error) => printf(
+            static fn(Failure $failure) => printf(
                 'Migrations failed with : %s',
-                $error::class,
+                $failure->error()::class,
             ),
         );
     ```
@@ -189,17 +183,13 @@ declare(strict_types = 1);
 use Formal\Migrations\{
     Factory,
     Commands\Migration,
+    Failure,
 };
 use Innmind\OperatingSystem\{
     Factory as OS,
     OperatingSystem,
 };
-use Innmind\Server\Control\Server\{
-    Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
-};
+use Innmind\Server\Control\Server\Command;
 use Innmind\Url\Url;
 use Innmind\Immutable\Sequence;
 
@@ -209,6 +199,7 @@ Factory::of(OS::build())
     ->storeVersionsInDatabase(
         Url::of('mysql://user:pwd@127.0.0.1:3306/database'),
     )
+    ->unwrap()
     ->commands()
     ->of(Sequence::of(
         Migration::of(
@@ -226,9 +217,9 @@ Factory::of(OS::build())
     )
     ->match(
         static fn() => print('Everything has been migrated'),
-        static fn(TimedOut|Failed|Signaled $error) => printf(
+        static fn(Failure $failure) => printf(
             'Migrations failed with : %s',
-            $error::class,
+            $failure->error()::class,
         ),
     );
 ```

@@ -28,16 +28,17 @@ return static function() {
             @\mkdir($sql, recursive: true);
             $tmp = \sys_get_temp_dir().'/formal/migrations/tmp/';
             @\mkdir($tmp, recursive: true);
-            $fs = $os->filesystem()->mount(Path::of($tmp));
-            $fs
+            $fs = $os->filesystem()->mount(Path::of($tmp))->unwrap();
+            $_ = $fs
                 ->root()
                 ->all()
                 ->map(static fn($file) => $file->name())
-                ->foreach($fs->remove(...));
+                ->foreach(static fn($file) => $fs->remove($file)->unwrap());
 
-            $os
+            $_ = $os
                 ->filesystem()
                 ->mount(Path::of($sql))
+                ->unwrap()
                 ->add(File::named(
                     'a.sql',
                     File\Content::ofString(<<<SQL
@@ -45,111 +46,119 @@ return static function() {
                     --
                     drop table `test`
                     SQL),
-                ));
-            $os
+                ))
+                ->unwrap();
+            $_ = $os
                 ->remote()
-                ->sql($dsn)(Query\SQL::of('drop table if exists `version`'));
+                ->sql($dsn)
+                ->unwrap()(Query::of('drop table if exists `version`'));
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsInDatabase($dsn)
+                ->unwrap()
                 ->sql()
                 ->of(Sequence::of(
                     SQL\Migration::of(
                         'a',
-                        Query\SQL::of('create table if not exists `test` (`value` int not null)'),
-                        Query\SQL::of('drop table `test`'),
+                        Query::of('create table if not exists `test` (`value` int not null)'),
+                        Query::of('drop table `test`'),
                     ),
                 ))
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsInDatabase($dsn)
+                ->unwrap()
                 ->sql()
                 ->files(Path::of($sql))
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
 
             [$successfully, $versions] = Factory::of($os)
                 ->storeVersionsOnFilesystem(Path::of($tmp))
+                ->unwrap()
                 ->commands()
                 ->of(Sequence::of(
                     Commands\Migration::of('echo test'),
                 ))
                 ->migrate()
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
         },
     );
 
     yield proof(
         'Store migrations versions in a specified table name',
         given(
-            Set\Strings::madeOf(
-                Set\Chars::uppercaseLetter(),
-                Set\Chars::lowercaseLetter(),
-            )->between(1, 64),
+            Set::strings()
+                ->madeOf(
+                    Set::strings()->chars()->uppercaseLetter(),
+                    Set::strings()->chars()->lowercaseLetter(),
+                )
+                ->between(1, 64),
         ),
         static function($assert, $table) {
             $os = OS::build();
 
             $port = \getenv('DB_PORT') ?: '3306';
             $dsn = Url::of("mysql://root:root@127.0.0.1:$port/example");
-            $sql = $os->remote()->sql($dsn);
+            $sql = $os->remote()->sql($dsn)->unwrap();
 
-            $sql(Query\SQL::of("drop table if exists $table"));
+            $_ = $sql(Query::of("drop table if exists `$table`"));
 
             $migrations = Factory::of($os)
                 ->storeVersionsInDatabase($dsn, $table)
+                ->unwrap()
                 ->sql()
                 ->of(Sequence::of(
                     SQL\Migration::of(
                         'a',
-                        Query\SQL::of('create table if not exists `test` (`value` int not null)'),
-                        Query\SQL::of('drop table `test`'),
+                        Query::of('create table if not exists `test` (`value` int not null)'),
+                        Query::of('drop table `test`'),
                     ),
                 ));
 
             [$successfully, $versions] = $migrations
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
 
             [$successfully, $versions] = $migrations
                 ->migrate($dsn)
                 ->match(
-                    static fn($versions) => [true, $versions],
-                    static fn($_, $versions) => [false, $versions],
+                    static fn($applied) => [true, $applied->versions()],
+                    static fn($failure) => [false, $failure->versions()],
                 );
 
             $assert->true($successfully);
-            $assert->count(0, $versions);
+            $assert->same(0, $versions->size());
 
-            $assert->count(
+            $assert->same(
                 1,
-                $sql(Query\SQL::of("select * from $table")),
+                $sql(Query::of("select * from `$table`"))->size(),
             );
         },
     );

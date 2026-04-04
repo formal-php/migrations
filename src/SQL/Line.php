@@ -78,7 +78,7 @@ final class Line
 
         return match ($query) {
             '' => null,
-            default => Query\SQL::of($query),
+            default => Query::of($query),
         };
     }
 }

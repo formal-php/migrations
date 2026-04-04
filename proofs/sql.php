@@ -2,10 +2,11 @@
 declare(strict_types = 1);
 
 use Formal\Migrations\{
-    SQL,
+    SQL\Runner as SQL,
     SQL\Migration,
     SQL\Load,
     Version,
+    Migrations\All,
 };
 use Formal\ORM\{
     Manager,
@@ -16,16 +17,13 @@ use Formal\ORM\{
 };
 use Formal\AccessLayer\Query;
 use Innmind\OperatingSystem\Factory;
-use Innmind\TimeContinuum\PointInTime;
+use Innmind\Time\Point;
 use Innmind\Filesystem\{
-    Adapter\InMemory,
+    Adapter,
     File,
 };
 use Innmind\Url\Url;
-use Innmind\Immutable\{
-    Sequence,
-    Either,
-};
+use Innmind\Immutable\Sequence;
 use Innmind\BlackBox\Set;
 
 return static function() {
@@ -38,29 +36,30 @@ return static function() {
         'SQL migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) use ($os, $dsn) {
             [$a, $b, $c, $d] = $names;
 
             // setup
-            $os
+            $_ = $os
                 ->remote()
-                ->sql($dsn)(
-                    Query\SQL::of('drop table if exists `test`'),
+                ->sql($dsn)
+                ->unwrap()(
+                    Query::of('drop table if exists `test`'),
                 );
 
             $migrations = SQL::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -70,36 +69,36 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
-                    Query\SQL::of('create table `test` (`value` int not null)'),
+                    Query::of('create table `test` (`value` int not null)'),
                 ),
                 Migration::of(
                     $b,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('insert into `test` values (1)'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('insert into `test` values (1)'),
+                    Query::of('commit'),
                 ),
                 Migration::of(
                     $c,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('insert into `test` values (3)'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('insert into `test` values (3)'),
+                    Query::of('commit'),
                 ),
                 Migration::of(
                     $d,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('delete from `test` where `value` > 2'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('delete from `test` where `value` > 2'),
+                    Query::of('commit'),
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+            )))->match(
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
-            $assert->count(4, $versions);
+            $assert->same(4, $versions->size());
             $assert->same(
                 [$a, $b, $c, $d],
                 $versions
@@ -135,8 +134,9 @@ return static function() {
                 [['value' => 1]],
                 $os
                     ->remote()
-                    ->sql($dsn)(
-                        Query\SQL::of('select * from `test`'),
+                    ->sql($dsn)
+                    ->unwrap()(
+                        Query::of('select * from `test`'),
                     )
                     ->map(static fn($row) => $row->toArray())
                     ->toList(),
@@ -148,29 +148,30 @@ return static function() {
         'SQL partial migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) use ($os, $dsn) {
             [$a, $b, $c, $d] = $names;
 
             // setup
-            $os
+            $_ = $os
                 ->remote()
-                ->sql($dsn)(
-                    Query\SQL::of('drop table if exists `test`'),
+                ->sql($dsn)
+                ->unwrap()(
+                    Query::of('drop table if exists `test`'),
                 );
 
             $migrations = SQL::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -180,46 +181,43 @@ return static function() {
                 $dsn,
             );
 
-            $storage->transactional(
-                static function() use ($storage, $os, $d) {
-                    $storage
-                        ->repository(Version::class)
-                        ->put(Version::new($d, $os->clock()));
-
-                    return Either::right(null);
-                },
+            $_ = $storage->transactional(
+                static fn() => $storage
+                    ->repository(Version::class)
+                    ->put(Version::new($d, $os->clock()))
+                    ->either(),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
-                    Query\SQL::of('create table `test` (`value` int not null)'),
+                    Query::of('create table `test` (`value` int not null)'),
                 ),
                 Migration::of(
                     $b,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('insert into `test` values (1)'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('insert into `test` values (1)'),
+                    Query::of('commit'),
                 ),
                 Migration::of(
                     $c,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('insert into `test` values (3)'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('insert into `test` values (3)'),
+                    Query::of('commit'),
                 ),
                 Migration::of(
                     $d,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('delete from `test` where `value` > 2'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('delete from `test` where `value` > 2'),
+                    Query::of('commit'),
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+            )))->match(
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
-            $assert->count(3, $versions);
+            $assert->same(3, $versions->size());
             $assert->same(
                 [$a, $b, $c],
                 $versions
@@ -255,8 +253,9 @@ return static function() {
                 [['value' => 1], ['value' => 3]],
                 $os
                     ->remote()
-                    ->sql($dsn)(
-                        Query\SQL::of('select * from `test`'),
+                    ->sql($dsn)
+                    ->unwrap()(
+                        Query::of('select * from `test`'),
                     )
                     ->map(static fn($row) => $row->toArray())
                     ->toList(),
@@ -268,10 +267,10 @@ return static function() {
         'SQL migrations from raw files',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) use ($os, $dsn) {
@@ -279,12 +278,13 @@ return static function() {
             [$a, $b, $c, $d] = $names;
 
             // setup
-            $os
+            $_ = $os
                 ->remote()
-                ->sql($dsn)(
-                    Query\SQL::of('drop table if exists `test`'),
+                ->sql($dsn)
+                ->unwrap()(
+                    Query::of('drop table if exists `test`'),
                 );
-            $filesystem = InMemory::emulateFilesystem();
+            $filesystem = Adapter::inMemory();
             $sql = [
                 ['create table `test` (`value` int not null)'],
                 [
@@ -309,19 +309,19 @@ return static function() {
             ];
 
             foreach ($names as $i => $name) {
-                $filesystem->add(File::named(
+                $_ = $filesystem->add(File::named(
                     $name,
                     File\Content::ofString(\implode("\n", $sql[$i])),
-                ));
+                ))->unwrap();
             }
 
             $migrations = SQL::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -331,13 +331,13 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions] = $migrations(Load::files($filesystem))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+            [$successfully, $versions] = $migrations(All::of(Load::files($filesystem)))->match(
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
-            $assert->count(4, $versions);
+            $assert->same(4, $versions->size());
             $assert->same(
                 [$a, $b, $c, $d],
                 $versions
@@ -373,8 +373,9 @@ return static function() {
                 [['value' => 1]],
                 $os
                     ->remote()
-                    ->sql($dsn)(
-                        Query\SQL::of('select * from `test`'),
+                    ->sql($dsn)
+                    ->unwrap()(
+                        Query::of('select * from `test`'),
                     )
                     ->map(static fn($row) => $row->toArray())
                     ->toList(),
@@ -386,28 +387,29 @@ return static function() {
         'SQL failing migrations',
         given(
             Set\MutuallyExclusive::of(
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
-                Set\Strings::madeOf(Set\Chars::alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
+                Set::strings()->madeOf(Set::strings()->chars()->alphanumerical())->atLeast(1),
             ),
         ),
         static function($assert, $names) use ($os, $dsn) {
             [$a, $b, $c] = $names;
 
             // setup
-            $os
+            $_ = $os
                 ->remote()
-                ->sql($dsn)(
-                    Query\SQL::of('drop table if exists `test`'),
+                ->sql($dsn)
+                ->unwrap()(
+                    Query::of('drop table if exists `test`'),
                 );
 
             $migrations = SQL::of(
                 $storage = Manager::filesystem(
-                    InMemory::emulateFilesystem(),
+                    Adapter::inMemory(),
                     Aggregates::of(
                         Types::of(
                             Support::class(
-                                PointInTime::class,
+                                Point::class,
                                 PointInTimeType::new($os->clock()),
                             ),
                         ),
@@ -417,24 +419,28 @@ return static function() {
                 $dsn,
             );
 
-            [$successfully, $versions, $error] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
-                    Query\SQL::of('create table `test` (`value` int not null)'),
+                    Query::of('create table `test` (`value` int not null)'),
                 ),
                 Migration::of(
                     $b,
-                    Query\SQL::of('create table `test` (`value` int not null)'),
+                    Query::of('create table `test` (`value` int not null)'),
                 ),
                 Migration::of(
                     $c,
-                    Query\SQL::of('start transaction'),
-                    Query\SQL::of('insert into `test` values (3)'),
-                    Query\SQL::of('commit'),
+                    Query::of('start transaction'),
+                    Query::of('insert into `test` values (3)'),
+                    Query::of('commit'),
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error],
+            )))->match(
+                static fn($applied) => [true, $applied->versions(), null],
+                static fn($failure) => [
+                    false,
+                    $failure->applied(),
+                    $failure->error(),
+                ],
             );
 
             $assert->false($successfully);
@@ -445,7 +451,7 @@ return static function() {
                 "Query 'create table `test` (`value` int not null)' failed with: [42S01] [1050] Table 'test' already exists",
                 $error->getMessage(),
             );
-            $assert->count(1, $versions);
+            $assert->same(1, $versions->size());
             $assert->same(
                 [$a],
                 $versions
@@ -473,8 +479,9 @@ return static function() {
                 [],
                 $os
                     ->remote()
-                    ->sql($dsn)(
-                        Query\SQL::of('select * from `test`'),
+                    ->sql($dsn)
+                    ->unwrap()(
+                        Query::of('select * from `test`'),
                     )
                     ->map(static fn($row) => $row->toArray())
                     ->toList(),
