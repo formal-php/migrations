@@ -38,7 +38,10 @@ You can then run them via a script like this one:
 <?php
 declare(strict_types = 1);
 
-use Formal\Migrations\Factory;
+use Formal\Migrations\{
+    Factory,
+    Failure,
+};
 use Innmind\OperatingSystem\Factory as OS;
 use Innmind\Url\Url;
 
@@ -48,14 +51,15 @@ $dsn = Url::of('mysql://user:pwd@127.0.0.1:3306/database');
 
 Factory::of(OS::build())
     ->storeVersionsInDatabase($dsn)
+    ->unwrap()
     ->sql()
     ->files(Path::of('path/to/migrations/'))
     ->migrate($dsn)
     ->match(
         static fn() => print('Everything has been migrated'),
-        static fn(\Throwable $error) => printf(
+        static fn(Failure $failure) => printf(
             'Migrations failed with the message : %s',
-            $error->getMessage(),
+            $failure->error()->getMessage(),
         ),
     );
 ```
@@ -78,6 +82,7 @@ declare(strict_types = 1);
 use Formal\Migrations\{
     Factory,
     SQL\Migration,
+    Failure,
 };
 use Formal\AccessLayer\Query;
 use Innmind\OperatingSystem\Factory as OS;
@@ -90,6 +95,7 @@ $dsn = Url::of('mysql://user:pwd@127.0.0.1:3306/database');
 
 Factory::of(OS::build())
     ->storeVersionsInDatabase($dsn)
+    ->unwrap()
     ->sql()
     ->of(Sequence::of(
         Migration::of(
@@ -104,9 +110,9 @@ Factory::of(OS::build())
     ->migrate($dsn)
     ->match(
         static fn() => print('Everything has been migrated'),
-        static fn(\Throwable $error) => printf(
+        static fn(Failure $failure) => printf(
             'Migrations failed with the message : %s',
-            $error->getMessage(),
+            $failure->error()->getMessage(),
         ),
     );
 ```
@@ -131,6 +137,7 @@ In the example above there's only one `Query` per migration but you can add mult
         use Formal\Migrations\{
             Factory,
             SQL\Migration,
+            Failure,
         };
         use Innmind\OperatingSystem\Factory as OS;
         use Innmind\Url\Url;
@@ -142,6 +149,7 @@ In the example above there's only one `Query` per migration but you can add mult
 
         Factory::of(OS::build())
             ->storeVersionsInDatabase($dsn)
+            ->unwrap()
             ->sql()
             ->of(
                 FeatureA\Migrations::load()
@@ -151,9 +159,9 @@ In the example above there's only one `Query` per migration but you can add mult
             ->migrate($dsn)
             ->match(
                 static fn() => print('Everything has been migrated'),
-                static fn(\Throwable $error) => printf(
+                static fn(Failure $failure) => printf(
                     'Migrations failed with the message : %s',
-                    $error->getMessage(),
+                    $failure->error()->getMessage(),
                 ),
             );
         ```

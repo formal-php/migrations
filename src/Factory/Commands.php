@@ -4,50 +4,55 @@ declare(strict_types = 1);
 namespace Formal\Migrations\Factory;
 
 use Formal\Migrations\{
-    Commands as Runner,
+    Commands\Runner,
+    Commands\Reference,
+    Commands\Migration,
+    Migrations\All,
+    Failure,
     Applied,
-    Migration,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Server\Control\Server\{
     Processes,
     Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
 };
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\{
+    Sequence,
+    Either,
+    Attempt,
+    SideEffect,
+};
 
 final readonly class Commands
 {
     /**
-     * @param \Closure(): void $setup
-     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
+     * @param \Closure(): Attempt<SideEffect> $setup
+     * @param All<Migration> $migrations
      */
     private function __construct(
         private OperatingSystem $os,
         private Manager $storage,
         private \Closure $setup,
-        private Sequence $migrations,
+        private All $migrations,
     ) {
     }
 
     /**
      * @internal
      *
-     * @param \Closure(): void $setup
+     * @param \Closure(): Attempt<SideEffect> $setup
      */
     public static function new(
         OperatingSystem $os,
         Manager $storage,
         \Closure $setup,
     ): self {
-        return new self($os, $storage, $setup, Sequence::of());
+        return new self($os, $storage, $setup, All::none(Migration::class));
     }
 
     /**
-     * @param Sequence<Migration<Runner\Run, TimedOut|Failed|Signaled>> $migrations
+     * @param Sequence<Migration> $migrations
      */
     public function of(Sequence $migrations): self
     {
@@ -55,27 +60,31 @@ final readonly class Commands
             $this->os,
             $this->storage,
             $this->setup,
-            $migrations,
+            All::of($migrations),
         );
     }
 
     /**
      * @param ?callable(OperatingSystem): Processes $build
-     * @param ?callable(Runner\Reference): (callable(Command): Command) $configure
+     * @param ?callable(Reference): (callable(Command): Command) $configure
      *
-     * @return Applied<TimedOut|Failed|Signaled>
+     * @return Either<Failure, Applied>
      */
     public function migrate(
         ?callable $build = null,
         ?callable $configure = null,
-    ): Applied {
-        ($this->setup)();
-
-        return Runner::of(
-            $this->storage,
-            $this->os,
-            $build,
-            $configure,
-        )($this->migrations);
+    ): Either {
+        return ($this->setup)()
+            ->either()
+            ->leftMap(static fn($e) => Failure::of(
+                $e,
+                Sequence::of(),
+            ))
+            ->flatMap(fn() => Runner::of(
+                $this->storage,
+                $this->os,
+                $build,
+                $configure,
+            )($this->migrations));
     }
 }

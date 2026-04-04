@@ -3,23 +3,14 @@ declare(strict_types = 1);
 
 namespace Formal\Migrations\Commands;
 
-use Formal\Migrations\Migration as MigrationInterface;
-use Innmind\Server\Control\Server\{
-    Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
-};
+use Innmind\Server\Control\Server\Command;
 use Innmind\Immutable\{
     Sequence,
-    Either,
+    Attempt,
     SideEffect,
 };
 
-/**
- * @implements MigrationInterface<Run, TimedOut|Failed|Signaled>
- */
-final class Migration implements MigrationInterface
+final class Migration
 {
     /**
      * @param non-empty-string $name
@@ -31,15 +22,18 @@ final class Migration implements MigrationInterface
     ) {
     }
 
-    #[\Override]
-    public function __invoke($kind): Either
+    /**
+     * @internal
+     *
+     * @return Attempt<non-empty-string>
+     */
+    public function __invoke(Run $run): Attempt
     {
         return $this
             ->commands
             ->sink(SideEffect::identity)
-            ->either(static fn($sideEffect, $command) => $kind($command)->map(
-                static fn() => $sideEffect,
-            ));
+            ->attempt(static fn($sideEffect, $command) => $run($command))
+            ->map(fn() => $this->name);
     }
 
     /**
@@ -54,7 +48,9 @@ final class Migration implements MigrationInterface
         return new self($name, Sequence::of(...$commands));
     }
 
-    #[\Override]
+    /**
+     * @return non-empty-string
+     */
     public function name(): string
     {
         return $this->name;

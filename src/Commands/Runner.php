@@ -1,27 +1,25 @@
 <?php
 declare(strict_types = 1);
 
-namespace Formal\Migrations;
+namespace Formal\Migrations\Commands;
 
-use Formal\Migrations\Commands\{
-    Run,
-    Reference,
+use Formal\Migrations\{
+    Applied,
+    Migrations\All,
+    Failure,
 };
 use Formal\ORM\Manager;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Server\Control\Server\{
     Processes,
     Command,
-    Process\TimedOut,
-    Process\Failed,
-    Process\Signaled,
 };
-use Innmind\Immutable\Sequence;
+use Innmind\Immutable\Either;
 
 /**
- * @implements Runner<Run, TimedOut|Failed|Signaled>
+ * @internal
  */
-final class Commands implements Runner
+final class Runner
 {
     private Manager $storage;
     private OperatingSystem $os;
@@ -46,8 +44,12 @@ final class Commands implements Runner
         $this->configure = $configure;
     }
 
-    #[\Override]
-    public function __invoke(Sequence $migrations): Applied
+    /**
+     * @param All<Migration> $migrations
+     *
+     * @return Either<Failure, Applied>
+     */
+    public function __invoke(All $migrations): Either
     {
         $processes = ($this->build)($this->os);
         $run = Run::of($processes, $this->configure);
@@ -55,12 +57,15 @@ final class Commands implements Runner
         return Applied::of(
             $this->os->clock(),
             $this->storage,
-            $migrations,
-            $run,
+            $migrations
+                ->excludeAlreadyApplied($this->storage)
+                ->map(static fn($migration) => static fn() => $migration($run)),
         );
     }
 
     /**
+     * @internal
+     *
      * @param ?callable(OperatingSystem): Processes $build
      * @param ?callable(Reference): (callable(Command): Command) $configure
      */

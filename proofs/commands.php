@@ -3,9 +3,10 @@ declare(strict_types = 1);
 
 use Fixtures\Formal\Migrations\Ref;
 use Formal\Migrations\{
-    Commands,
+    Commands\Runner as Commands,
     Commands\Migration,
     Version,
+    Migrations\All,
 };
 use Formal\ORM\{
     Manager,
@@ -61,7 +62,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions] = $migrations(Sequence::of(
+            [$successfully, $versions] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -80,9 +81,9 @@ return static function() {
                     $d,
                     Ref::rm,
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions],
-                static fn($versions) => [false, $versions],
+            )))->match(
+                static fn($applied) => [true, $applied->versions()],
+                static fn($failure) => [false, $failure->applied()],
             );
 
             $assert->true($successfully);
@@ -161,7 +162,7 @@ return static function() {
                 static fn() => static fn($command) => $command->withWorkingDirectory(Path::of($tmp)),
             );
 
-            [$successfully, $versions, $error] = $migrations(Sequence::of(
+            [$successfully, $versions, $error] = $migrations(All::of(Sequence::of(
                 Migration::of(
                     $a,
                     Command::foreground('touch test')
@@ -176,9 +177,13 @@ return static function() {
                     Command::foreground('echo foo >> test')
                         ->withWorkingDirectory(Path::of($tmp)),
                 ),
-            ))->match(
-                static fn($versions) => [true, $versions, null],
-                static fn($error, $versions) => [false, $versions, $error],
+            )))->match(
+                static fn($applied) => [true, $applied->versions(), null],
+                static fn($failure) => [
+                    false,
+                    $failure->applied(),
+                    $failure->error()->kind(),
+                ],
             );
 
             $assert->false($successfully);

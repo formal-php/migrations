@@ -17,6 +17,7 @@ use Innmind\Url\{
     Url,
     Path,
 };
+use Innmind\Immutable\Attempt;
 
 final class Factory
 {
@@ -32,12 +33,13 @@ final class Factory
 
     /**
      * @param ?non-empty-string $table
+     *
+     * @return Attempt<Factory\Configured>
      */
     public function storeVersionsInDatabase(
         Url $dsn,
         ?string $table = null,
-    ): Factory\Configured {
-        $connection = $this->os->remote()->sql($dsn)->unwrap();
+    ): Attempt {
         $aggregates = Aggregates::of(
             Types::of(
                 Support::class(
@@ -51,30 +53,43 @@ final class Factory
             $aggregates = $aggregates->mapName(static fn() => $table);
         }
 
-        return Factory\Configured::of(
-            $this->os,
-            Manager::sql($connection, $aggregates),
-            static fn() => ShowCreateTable::of($aggregates)
-                ->ifNotExists()(Version::class)
-                ->foreach(static fn($query) => $connection($query)),
-        );
+        return $this
+            ->os
+            ->remote()
+            ->sql($dsn)
+            ->map(fn($connection) => Factory\Configured::of(
+                $this->os,
+                Manager::sql($connection, $aggregates),
+                static fn() => Attempt::of(
+                    static fn() => ShowCreateTable::of($aggregates)
+                        ->ifNotExists()(Version::class)
+                        ->foreach(static fn($query) => $connection($query)),
+                ),
+            ));
     }
 
-    public function storeVersionsOnFilesystem(Path $location): Factory\Configured
+    /**
+     * @return Attempt<Factory\Configured>
+     */
+    public function storeVersionsOnFilesystem(Path $location): Attempt
     {
-        return Factory\Configured::of(
-            $this->os,
-            Manager::filesystem(
-                $this->os->filesystem()->mount($location)->unwrap(),
-                Aggregates::of(
-                    Types::of(
-                        Support::class(
-                            Point::class,
-                            PointInTimeType::new($this->os->clock()),
+        return $this
+            ->os
+            ->filesystem()
+            ->mount($location)
+            ->map(fn($storage) => Factory\Configured::of(
+                $this->os,
+                Manager::filesystem(
+                    $storage,
+                    Aggregates::of(
+                        Types::of(
+                            Support::class(
+                                Point::class,
+                                PointInTimeType::new($this->os->clock()),
+                            ),
                         ),
                     ),
                 ),
-            ),
-        );
+            ));
     }
 }
